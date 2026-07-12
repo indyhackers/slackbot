@@ -1,12 +1,11 @@
+// see: https://nodejs.org/docs/latest-v24.x/api/typescript.html#type-stripping
 {
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    "erasableSyntaxOnly": true,
-    "module": "NodeNext",
     "noEmit": true,
-    "strict": true,
-    "target": "ES2024",
+    "target": "esnext",
+    "module": "nodenext",
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true
-  },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  }
 }
