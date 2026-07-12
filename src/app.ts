@@ -1,13 +1,21 @@
+import { DatabaseSync } from "node:sqlite";
+
 import { App, type AppOptions } from "@slack/bolt";
 import type { KnownBlock } from "@slack/types";
 import { onboardingMessages, onboardingStoppedMessage } from "./lang.ts";
 
 export function createApp(options: AppOptions): App {
   const app = new App(options);
-  const scheduledMessagesByUser = new Map<
-    string,
-    { channel: string; scheduled_message_id: string }[]
-  >();
+  const database = new DatabaseSync(
+    process.env.SLACKBOT_DB_PATH ?? "slackbot.db",
+  );
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS scheduled_messages (
+      user_id TEXT NOT NULL,
+      channel TEXT NOT NULL,
+      scheduled_message_id TEXT PRIMARY KEY
+    ) STRICT
+  `);
   const day = Number(process.env.ONBOARDING_DELAY_UNIT_MS ?? 86_400_000);
 
   app.event("team_join", async ({ event, client }) => {
@@ -15,7 +23,6 @@ export function createApp(options: AppOptions): App {
       return;
     }
 
-    const scheduledMessages = [];
     for (const message of onboardingMessages) {
       const blocks: KnownBlock[] = [
         {
@@ -50,25 +57,35 @@ export function createApp(options: AppOptions): App {
         post_at: Math.floor((Date.now() + message.day * day) / 1_000),
       });
       if (scheduled.channel && scheduled.scheduled_message_id) {
-        scheduledMessages.push({
-          channel: scheduled.channel,
-          scheduled_message_id: scheduled.scheduled_message_id,
-        });
+        database
+          .prepare(
+            "INSERT INTO scheduled_messages VALUES (?, ?, ?)",
+          )
+          .run(event.user.id, scheduled.channel, scheduled.scheduled_message_id);
       }
     }
-    scheduledMessagesByUser.set(event.user.id, scheduledMessages);
   });
 
   app.action("stop_onboarding", async ({ ack, body, client }) => {
     await ack();
 
     const userId = body.user.id;
+    const scheduledMessages = database
+      .prepare(
+        "SELECT channel, scheduled_message_id FROM scheduled_messages WHERE user_id = ?",
+      )
+      .all(userId);
     await Promise.allSettled(
-      (scheduledMessagesByUser.get(userId) ?? []).map((message) =>
-        client.chat.deleteScheduledMessage(message),
+      scheduledMessages.map((message) =>
+        client.chat.deleteScheduledMessage({
+          channel: String(message.channel),
+          scheduled_message_id: String(message.scheduled_message_id),
+        }),
       ),
     );
-    scheduledMessagesByUser.delete(userId);
+    database
+      .prepare("DELETE FROM scheduled_messages WHERE user_id = ?")
+      .run(userId);
     await client.chat.postMessage({
       channel: userId,
       text: onboardingStoppedMessage,

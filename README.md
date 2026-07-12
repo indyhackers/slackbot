@@ -43,10 +43,11 @@ run it with Slack credentials supplied through environment variables:
 docker run --rm \
   --env SLACK_BOT_TOKEN \
   --env SLACK_APP_TOKEN \
+  --volume slackbot-data:/data \
   indyhackers-slackbot
 ```
 
-the container runs as a non-root user and stops the Bolt app gracefully when it receives `SIGTERM` or `SIGINT`.
+the volume persists scheduled onboarding message IDs across container restarts. the container runs as a non-root user and stops the Bolt app gracefully when it receives `SIGTERM` or `SIGINT`.
 
 ## commands
 
