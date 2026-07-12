@@ -12,6 +12,8 @@ oauth_config:
       - chat:write
       - users:read
 settings:
+  interactivity:
+    is_enabled: true
   event_subscriptions:
     bot_events:
       - team_join

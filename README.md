@@ -25,6 +25,8 @@ set `SLACK_BOT_TOKEN` and `SLACK_APP_TOKEN` in `.env`, then start the bot:
 npm run dev
 ```
 
+set `ONBOARDING_DELAY_UNIT_MS=60000` to test the day 1, 3, 5, and 7 follow-ups at minute-scale delays. when unset, each delay unit is one day.
+
 the process logs `Indy Hackers Slack bot connected` after opening its Socket Mode connection. stop it with `Ctrl+C`.
 
 ## container
