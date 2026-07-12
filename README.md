@@ -27,6 +27,25 @@ npm run dev
 
 The process logs `Indy Hackers Slack bot connected` after opening its Socket Mode connection. Stop it with `Ctrl+C`.
 
+## container
+
+build the production image:
+
+```sh
+docker build --tag indyhackers-slackbot .
+```
+
+run it with Slack credentials supplied through environment variables:
+
+```sh
+docker run --rm \
+  --env SLACK_BOT_TOKEN \
+  --env SLACK_APP_TOKEN \
+  indyhackers-slackbot
+```
+
+the container runs as a non-root user and stops the Bolt app gracefully when it receives `SIGTERM` or `SIGINT`.
+
 ## Commands
 
 ```sh
