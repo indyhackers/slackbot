@@ -1,4 +1,4 @@
-// see: https://nodejs.org/docs/latest-v24.x/api/typescript.html#type-stripping
+// see: https://nodejs.org/docs/v24.18.0/api/typescript.html#type-stripping
 {
   "compilerOptions": {
     "noEmit": true,

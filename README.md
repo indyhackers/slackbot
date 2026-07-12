@@ -12,7 +12,7 @@ Minimal [Bolt for JavaScript](https://docs.slack.dev/tools/bolt-js/) application
 
 ## Local setup
 
-Node.js 24 and npm 11 are required.
+Node.js 24.18.0 and npm 11.16.0 are required.
 
 ```sh
 npm install
