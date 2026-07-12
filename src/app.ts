@@ -2,7 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import { App, type AppOptions } from "@slack/bolt";
 import type { KnownBlock } from "@slack/types";
-import { onboardingMessages, onboardingStoppedMessage } from "./lang.ts";
+import { onboarding, onboardingStoppedMessage } from "./lang.ts";
 
 export function createApp(options: AppOptions): App {
   const app = new App(options);
@@ -23,11 +23,11 @@ export function createApp(options: AppOptions): App {
       return;
     }
 
-    for (const message of onboardingMessages) {
+    for (const [days, text] of Object.entries(onboarding)) {
       const blocks: KnownBlock[] = [
         {
           type: "section",
-          text: { type: "mrkdwn", text: message.text },
+          text: { type: "mrkdwn", text },
         },
         {
           type: "actions",
@@ -41,10 +41,10 @@ export function createApp(options: AppOptions): App {
         },
       ];
 
-      if (message.day === 0) {
+      if (days === "0") {
         await client.chat.postMessage({
           channel: event.user.id,
-          text: message.text,
+          text,
           blocks,
         });
         continue;
@@ -52,9 +52,9 @@ export function createApp(options: AppOptions): App {
 
       const scheduled = await client.chat.scheduleMessage({
         channel: event.user.id,
-        text: message.text,
+        text,
         blocks,
-        post_at: Math.floor((Date.now() + message.day * day) / 1_000),
+        post_at: Math.floor((Date.now() + Number(days) * day) / 1_000),
       });
       if (scheduled.channel && scheduled.scheduled_message_id) {
         database
