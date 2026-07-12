@@ -13,18 +13,21 @@ database.exec(`
   ) STRICT
 `);
 
-export function saveScheduledMessage(
-  userId: string,
-  channel: string,
-  scheduledMessageId: string,
-): void {
-  sql.run`INSERT INTO scheduled_messages VALUES (${userId}, ${channel}, ${scheduledMessageId})`;
+export interface ScheduledMessage {
+  user_id: string;
+  channel: string;
+  scheduled_message_id: string;
 }
 
-export function getScheduledMessages(userId: string) {
+export function insert(message: ScheduledMessage): void {
+  sql.run`INSERT INTO scheduled_messages VALUES (${message.user_id}, ${message.channel}, ${message.scheduled_message_id})`;
+}
+
+export function select(userId: string): ScheduledMessage[] {
   return sql
-    .all`SELECT channel, scheduled_message_id FROM scheduled_messages WHERE user_id = ${userId}`
+    .all`SELECT * FROM scheduled_messages WHERE user_id = ${userId}`
     .map((message) => ({
+      user_id: String(message.user_id),
       channel: String(message.channel),
       scheduled_message_id: String(message.scheduled_message_id),
     }));

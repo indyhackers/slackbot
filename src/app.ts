@@ -2,8 +2,8 @@ import { App, type AppOptions } from "@slack/bolt";
 import type { KnownBlock } from "@slack/types";
 import {
   deleteScheduledMessages,
-  getScheduledMessages,
-  saveScheduledMessage,
+  insert,
+  select,
 } from "./database.ts";
 import { onboarding, onboardingStoppedMessage } from "./lang.ts";
 
@@ -50,11 +50,11 @@ export function createApp(options: AppOptions): App {
         post_at: Math.floor((Date.now() + Number(days) * day) / 1_000),
       });
       if (scheduled.channel && scheduled.scheduled_message_id) {
-        saveScheduledMessage(
-          event.user.id,
-          scheduled.channel,
-          scheduled.scheduled_message_id,
-        );
+        insert({
+          user_id: event.user.id,
+          channel: scheduled.channel,
+          scheduled_message_id: scheduled.scheduled_message_id,
+        });
       }
     }
   });
@@ -64,7 +64,7 @@ export function createApp(options: AppOptions): App {
 
     const userId = body.user.id;
     await Promise.allSettled(
-      getScheduledMessages(userId).map((message) =>
+      select(userId).map((message) =>
         client.chat.deleteScheduledMessage(message),
       ),
     );
