@@ -1,11 +1,17 @@
-import { App } from "@slack/bolt";
+import { App, type AppOptions } from "@slack/bolt";
+import { welcomeMessage } from "./lang.ts";
 
-import type { SlackConfig } from "./config.ts";
+export function createApp(options: AppOptions): App {
+  const app = new App(options);
 
-export function createApp(config: SlackConfig): App {
-  return new App({
-    token: config.botToken,
-    appToken: config.appToken,
-    socketMode: true,
+  app.event("team_join", async ({ event, client }) => {
+    if (!event.user.is_bot) {
+      await client.chat.postMessage({
+        channel: event.user.id,
+        text: welcomeMessage,
+      });
+    }
   });
+
+  return app;
 }

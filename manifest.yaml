@@ -10,7 +10,11 @@ oauth_config:
   scopes:
     bot:
       - chat:write
+      - users:read
 settings:
+  event_subscriptions:
+    bot_events:
+      - team_join
   org_deploy_enabled: false
   socket_mode_enabled: true
   token_rotation_enabled: false
