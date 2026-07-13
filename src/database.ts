@@ -1,4 +1,4 @@
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync, type SQLOutputValue } from "node:sqlite";
 
 const database = new DatabaseSync(
   process.env.SLACKBOT_DB_PATH ?? "slackbot.db",
@@ -19,18 +19,15 @@ export interface ScheduledMessage {
   scheduled_message_id: string;
 }
 
-export function insert(message: ScheduledMessage): void {
+export function insertScheduledMessage(message: ScheduledMessage): void {
   sql.run`INSERT INTO scheduled_messages VALUES (${message.user_id}, ${message.channel}, ${message.scheduled_message_id})`;
 }
 
-export function select(userId: string): ScheduledMessage[] {
-  return sql
-    .all`SELECT * FROM scheduled_messages WHERE user_id = ${userId}`
-    .map((message) => ({
-      user_id: String(message.user_id),
-      channel: String(message.channel),
-      scheduled_message_id: String(message.scheduled_message_id),
-    }));
+export function selectScheduledMessages(userId: string): ScheduledMessage[] {
+  return sql.all`SELECT * FROM scheduled_messages WHERE user_id = ${userId}` as Record<
+    string,
+    SQLOutputValue
+  >[] as unknown as ScheduledMessage[];
 }
 
 export function deleteScheduledMessages(userId: string): void {

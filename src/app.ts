@@ -2,8 +2,8 @@ import { App, type AppOptions } from "@slack/bolt";
 import type { KnownBlock } from "@slack/types";
 import {
   deleteScheduledMessages,
-  insert,
-  select,
+  insertScheduledMessage,
+  selectScheduledMessages,
 } from "./database.ts";
 import { onboarding, onboardingStoppedMessage } from "./lang.ts";
 
@@ -50,7 +50,7 @@ export function createApp(options: AppOptions): App {
         post_at: Math.floor((Date.now() + Number(days) * day) / 1_000),
       });
       if (scheduled.channel && scheduled.scheduled_message_id) {
-        insert({
+        insertScheduledMessage({
           user_id: event.user.id,
           channel: scheduled.channel,
           scheduled_message_id: scheduled.scheduled_message_id,
@@ -64,7 +64,7 @@ export function createApp(options: AppOptions): App {
 
     const userId = body.user.id;
     await Promise.allSettled(
-      select(userId).map((message) =>
+      selectScheduledMessages(userId).map((message) =>
         client.chat.deleteScheduledMessage(message),
       ),
     );
