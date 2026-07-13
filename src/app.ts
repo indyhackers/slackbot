@@ -1,13 +1,13 @@
 import { App, type AppOptions } from "@slack/bolt";
 import type { KnownBlock } from "@slack/types";
-import {
-  deleteScheduledMessages,
-  insertScheduledMessage,
-  selectScheduledMessages,
-} from "./database.ts";
+import { Effect } from "effect";
 import { onboarding, onboardingStoppedMessage } from "./lang.ts";
+import * as ScheduledMessageStore from "./scheduled-message-store.ts";
 
-export function createApp(options: AppOptions): App {
+export function createApp(
+  options: AppOptions,
+  scheduledMessageStore: ScheduledMessageStore.ScheduledMessageStore,
+): App {
   const app = new App(options);
   const day = Number(process.env.ONBOARDING_DELAY_UNIT_MS ?? 86_400_000);
 
@@ -50,11 +50,13 @@ export function createApp(options: AppOptions): App {
         post_at: Math.floor((Date.now() + Number(days) * day) / 1_000),
       });
       if (scheduled.channel && scheduled.scheduled_message_id) {
-        insertScheduledMessage({
-          user_id: event.user.id,
-          channel: scheduled.channel,
-          scheduled_message_id: scheduled.scheduled_message_id,
-        });
+        await Effect.runPromise(
+          scheduledMessageStore.insert({
+            userId: event.user.id,
+            channel: scheduled.channel,
+            scheduledMessageId: scheduled.scheduled_message_id,
+          }),
+        );
       }
     }
   });
@@ -63,12 +65,18 @@ export function createApp(options: AppOptions): App {
     await ack();
 
     const userId = body.user.id;
+    const scheduledMessages = await Effect.runPromise(
+      scheduledMessageStore.select(userId),
+    );
     await Promise.allSettled(
-      selectScheduledMessages(userId).map((message) =>
-        client.chat.deleteScheduledMessage(message),
+      scheduledMessages.map((message) =>
+        client.chat.deleteScheduledMessage({
+          channel: message.channel,
+          scheduled_message_id: message.scheduledMessageId,
+        }),
       ),
     );
-    deleteScheduledMessages(userId);
+    await Effect.runPromise(scheduledMessageStore.delete(userId));
     await client.chat.postMessage({
       channel: userId,
       text: onboardingStoppedMessage,
