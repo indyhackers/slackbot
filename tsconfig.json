@@ -1,11 +1,6 @@
-// see: https://nodejs.org/docs/v24.18.0/api/typescript.html#type-stripping
 {
+  "extends": "@tsconfig/bun",
   "compilerOptions": {
-    "noEmit": true,
-    "target": "esnext",
-    "module": "nodenext",
-    "rewriteRelativeImportExtensions": true,
-    "erasableSyntaxOnly": true,
-    "verbatimModuleSyntax": true
+    "types": ["bun"]
   }
 }

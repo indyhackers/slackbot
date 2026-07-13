@@ -1,11 +1,8 @@
-import { DatabaseSync, type SQLOutputValue } from "node:sqlite";
+import { Database } from "bun:sqlite";
 
-const database = new DatabaseSync(
-  process.env.SLACKBOT_DB_PATH ?? "slackbot.db",
-);
-const sql = database.createTagStore();
+const database = new Database(process.env.SLACKBOT_DB_PATH ?? "slackbot.db");
 
-database.exec(`
+database.run(`
   CREATE TABLE IF NOT EXISTS scheduled_messages (
     user_id TEXT NOT NULL,
     channel TEXT NOT NULL,
@@ -19,17 +16,27 @@ export interface ScheduledMessage {
   scheduled_message_id: string;
 }
 
+const insert = database.query<
+  unknown,
+  [userId: string, channel: string, scheduledMessageId: string]
+>(
+  "INSERT INTO scheduled_messages VALUES (?, ?, ?)",
+);
+const select = database.query<ScheduledMessage, [userId: string]>(
+  "SELECT * FROM scheduled_messages WHERE user_id = ?",
+);
+const remove = database.query<unknown, [userId: string]>(
+  "DELETE FROM scheduled_messages WHERE user_id = ?",
+);
+
 export function insertScheduledMessage(message: ScheduledMessage): void {
-  sql.run`INSERT INTO scheduled_messages VALUES (${message.user_id}, ${message.channel}, ${message.scheduled_message_id})`;
+  insert.run(message.user_id, message.channel, message.scheduled_message_id);
 }
 
 export function selectScheduledMessages(userId: string): ScheduledMessage[] {
-  return sql.all`SELECT * FROM scheduled_messages WHERE user_id = ${userId}` as Record<
-    string,
-    SQLOutputValue
-  >[] as unknown as ScheduledMessage[];
+  return select.all(userId);
 }
 
 export function deleteScheduledMessages(userId: string): void {
-  sql.run`DELETE FROM scheduled_messages WHERE user_id = ${userId}`;
+  remove.run(userId);
 }

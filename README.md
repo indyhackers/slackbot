@@ -1,6 +1,6 @@
 # Indy Hackers Slack bot
 
-minimal [Bolt for JavaScript](https://docs.slack.dev/tools/bolt-js/) application for the Indy Hackers Slack workspace. it runs on Node.js 24 using native TypeScript type stripping and connects to Slack through Socket Mode.
+minimal [Bolt for JavaScript](https://docs.slack.dev/tools/bolt-js/) application for the Indy Hackers Slack workspace. it runs on Bun and connects to Slack through Socket Mode.
 
 ## Slack app setup
 
@@ -12,17 +12,17 @@ minimal [Bolt for JavaScript](https://docs.slack.dev/tools/bolt-js/) application
 
 ## local setup
 
-Node.js 24.18.0 and npm 11.16.0 are required.
+Bun 1.3.14 is required.
 
 ```sh
-npm install
+bun install
 cp .env.example .env
 ```
 
 set `SLACK_BOT_TOKEN` and `SLACK_APP_TOKEN` in `.env`, then start the bot:
 
 ```sh
-npm run dev
+bun run dev
 ```
 
 set `ONBOARDING_DELAY_UNIT_MS=60000` to test the day 1, 3, 5, and 7 follow-ups at minute-scale delays. when unset, each delay unit is one day.
@@ -52,8 +52,8 @@ the volume persists scheduled onboarding message IDs across container restarts. 
 ## commands
 
 ```sh
-npm start            # start once
-npm run dev          # start and restart when files change
-npm run check-types  # run TypeScript checks without emitting files
-npm test             # run the Node.js test runner
+bun start            # start once
+bun run dev          # start and restart when files change
+bun run check-types  # run TypeScript checks without emitting files
+bun run test         # run the Bun test runner
 ```

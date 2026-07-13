@@ -1,15 +1,15 @@
-FROM node:24.18.0-slim
+FROM oven/bun:1.3.14-slim
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile --production
 
 COPY src ./src
 
-RUN mkdir /data && chown node:node /data
+RUN mkdir /data && chown bun:bun /data
 ENV SLACKBOT_DB_PATH=/data/slackbot.db
 
-USER node
+USER bun
 
-CMD ["node", "src/index.ts"]
+CMD ["bun", "src/index.ts"]
