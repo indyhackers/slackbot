@@ -6,14 +6,19 @@ features:
   bot_user:
     display_name: Indy Hackers
     always_online: false
+  slash_commands:
+    - command: /onboarding
+      description: stop your Indy Hackers onboarding
+      should_escape: false
+      usage_hint: stop
 oauth_config:
   scopes:
     bot:
       - chat:write
+      - commands
+      - im:write
       - users:read
 settings:
-  interactivity:
-    is_enabled: true
   event_subscriptions:
     bot_events:
       - team_join

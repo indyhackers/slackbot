@@ -1,5 +1,4 @@
 import { App, type AppOptions } from "@slack/bolt";
-import type { KnownBlock } from "@slack/types";
 import { onboarding } from "./onboarding.ts";
 
 export function createApp(options: AppOptions): App {
@@ -12,28 +11,10 @@ export function createApp(options: AppOptions): App {
     }
 
     for (const { offset, text } of onboarding.steps) {
-      const blocks: KnownBlock[] = [
-        {
-          type: "section",
-          text: { type: "mrkdwn", text },
-        },
-        {
-          type: "actions",
-          elements: [
-            {
-              type: "button",
-              action_id: "stop_onboarding",
-              text: { type: "plain_text", text: "stop onboarding" },
-            },
-          ],
-        },
-      ];
-
       if (offset === 0) {
         await client.chat.postMessage({
           channel: event.user.id,
           text,
-          blocks,
         });
         continue;
       }
@@ -41,32 +22,47 @@ export function createApp(options: AppOptions): App {
       await client.chat.scheduleMessage({
         channel: event.user.id,
         text,
-        blocks,
         post_at: Math.floor((Date.now() + offset * intervalMs) / 1_000),
       });
     }
   });
 
-  app.action("stop_onboarding", async ({ ack, body, client, logger }) => {
+  app.command("/onboarding", async ({ ack, command, client, logger }) => {
     await ack();
 
-    if (!body.channel?.id) {
-      logger.error("failed to stop onboarding: action is missing its channel");
+    if (command.text.trim() !== "stop") {
       await client.chat.postMessage({
-        channel: body.user.id,
+        channel: command.user_id,
+        text: onboarding.stop.usage,
+      });
+      return;
+    }
+
+    const conversation = await client.conversations
+      .open({ users: command.user_id })
+      .catch((error) => {
+        logger.error("failed to open onboarding DM", error);
+      });
+    const channel = conversation?.channel?.id;
+    if (!channel) {
+      if (conversation) {
+        logger.error("failed to open onboarding DM: Slack response is missing its channel ID");
+      }
+      await client.chat.postMessage({
+        channel: command.user_id,
         text: onboarding.stop.failure,
       });
       return;
     }
 
     const page = await client.chat.scheduledMessages
-      .list({ channel: body.channel.id, limit: onboarding.steps.length })
+      .list({ channel, limit: onboarding.steps.length })
       .catch((error) => {
         logger.error("failed to list scheduled onboarding messages", error);
       });
     if (!page) {
       await client.chat.postMessage({
-        channel: body.channel.id,
+        channel,
         text: onboarding.stop.failure,
       });
       return;
@@ -80,7 +76,7 @@ export function createApp(options: AppOptions): App {
         }
 
         return client.chat
-          .deleteScheduledMessage({ channel: body.channel!.id!, scheduled_message_id: id })
+          .deleteScheduledMessage({ channel, scheduled_message_id: id })
           .then(() => true)
           .catch((error) => {
             logger.error(`failed to delete scheduled message ${id}`, error);
@@ -90,7 +86,7 @@ export function createApp(options: AppOptions): App {
     );
 
     await client.chat.postMessage({
-      channel: body.channel.id,
+      channel,
       text: deletionResults.some((isDeleted) => !isDeleted)
         ? onboarding.stop.failure
         : onboarding.stop.success,
