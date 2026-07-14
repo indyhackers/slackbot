@@ -61,7 +61,10 @@ export function createApp(options: AppOptions): App {
     const userId = body.user.id;
     await Promise.allSettled(
       scheduledMessages.select(userId).map((message) =>
-        client.chat.deleteScheduledMessage(message),
+        client.chat.deleteScheduledMessage({
+          channel: message.channel,
+          scheduled_message_id: message.scheduled_message_id,
+        }),
       ),
     );
     scheduledMessages.delete(userId);
