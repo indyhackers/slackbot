@@ -16,25 +16,33 @@ interface ScheduledMessage {
   scheduled_message_id: string;
 }
 
-const insert = database.query<
-  unknown,
-  [
-    userId: ScheduledMessage["user_id"],
-    channel: ScheduledMessage["channel"],
-    scheduledMessageId: ScheduledMessage["scheduled_message_id"],
-  ]
->(
-  "INSERT INTO scheduled_messages VALUES (?, ?, ?)",
-);
-const select = database.query<ScheduledMessage, [userId: ScheduledMessage["user_id"]]>(
-  "SELECT * FROM scheduled_messages WHERE user_id = ?",
-);
-const remove = database.query<unknown, [userId: ScheduledMessage["user_id"]]>(
-  "DELETE FROM scheduled_messages WHERE user_id = ?",
-);
-
 export const scheduledMessages = {
-  insert: insert.run.bind(insert),
-  select: select.all.bind(select),
-  delete: remove.run.bind(remove),
+  insert: (() => {
+    const statement = database.query<
+      unknown,
+      [
+        userId: ScheduledMessage["user_id"],
+        channel: ScheduledMessage["channel"],
+        scheduledMessageId: ScheduledMessage["scheduled_message_id"],
+      ]
+    >(
+      "INSERT INTO scheduled_messages VALUES (?, ?, ?)",
+    );
+    return statement.run.bind(statement);
+  })(),
+  select: (() => {
+    const statement = database.query<
+      ScheduledMessage,
+      [userId: ScheduledMessage["user_id"]]
+    >(
+      "SELECT * FROM scheduled_messages WHERE user_id = ?",
+    );
+    return statement.all.bind(statement);
+  })(),
+  delete: (() => {
+    const statement = database.query<unknown, [userId: ScheduledMessage["user_id"]]>(
+      "DELETE FROM scheduled_messages WHERE user_id = ?",
+    );
+    return statement.run.bind(statement);
+  })(),
 };
