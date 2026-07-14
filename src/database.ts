@@ -10,33 +10,35 @@ database.run(`
   ) STRICT
 `);
 
-export interface ScheduledMessage {
+interface ScheduledMessage {
   user_id: string;
   channel: string;
   scheduled_message_id: string;
 }
 
-const insert = database.query<
-  unknown,
-  [userId: string, channel: string, scheduledMessageId: string]
->(
-  "INSERT INTO scheduled_messages VALUES (?, ?, ?)",
-);
-const select = database.query<ScheduledMessage, [userId: string]>(
-  "SELECT * FROM scheduled_messages WHERE user_id = ?",
-);
-const remove = database.query<unknown, [userId: string]>(
-  "DELETE FROM scheduled_messages WHERE user_id = ?",
-);
+export const scheduledMessages = {
+  insert(message: ScheduledMessage): void {
+    database.query<
+      unknown,
+      [
+        userId: typeof message.user_id,
+        channel: typeof message.channel,
+        scheduledMessageId: typeof message.scheduled_message_id,
+      ]
+    >(
+      "INSERT INTO scheduled_messages VALUES (?, ?, ?)",
+    ).run(message.user_id, message.channel, message.scheduled_message_id);
+  },
 
-export function insertScheduledMessage(message: ScheduledMessage): void {
-  insert.run(message.user_id, message.channel, message.scheduled_message_id);
-}
+  select(userId: ScheduledMessage["user_id"]): ScheduledMessage[] {
+    return database.query<ScheduledMessage, [userId: typeof userId]>(
+      "SELECT * FROM scheduled_messages WHERE user_id = ?",
+    ).all(userId);
+  },
 
-export function selectScheduledMessages(userId: string): ScheduledMessage[] {
-  return select.all(userId);
-}
-
-export function deleteScheduledMessages(userId: string): void {
-  remove.run(userId);
-}
+  delete(userId: ScheduledMessage["user_id"]): void {
+    database.query<unknown, [userId: typeof userId]>(
+      "DELETE FROM scheduled_messages WHERE user_id = ?",
+    ).run(userId);
+  },
+};
