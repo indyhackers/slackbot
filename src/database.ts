@@ -1,6 +1,8 @@
 import { Database } from "bun:sqlite";
 
-const database = new Database(process.env.SLACKBOT_DB_PATH ?? "slackbot.db");
+const database = new Database(process.env.SLACKBOT_DB_PATH ?? "slackbot.db", {
+  strict: true,
+});
 
 database.run(`
   CREATE TABLE IF NOT EXISTS scheduled_messages (
@@ -10,21 +12,19 @@ database.run(`
   ) STRICT
 `);
 
-interface ScheduledMessage {
+type ScheduledMessage = {
   user_id: string;
   channel: string;
   scheduled_message_id: string;
-}
+};
 
 export const scheduledMessages = {
-  insert: (...params: [
-    userId: ScheduledMessage["user_id"],
-    channel: ScheduledMessage["channel"],
-    scheduledMessageId: ScheduledMessage["scheduled_message_id"],
-  ]) =>
+  insert: (params: ScheduledMessage) =>
     database
-      .query<unknown, typeof params>("INSERT INTO scheduled_messages VALUES (?, ?, ?)")
-      .run(...params),
+      .query<unknown, typeof params>(
+        "INSERT INTO scheduled_messages VALUES ($user_id, $channel, $scheduled_message_id)",
+      )
+      .run(params),
 
   select: (...params: [userId: ScheduledMessage["user_id"]]) =>
     database
