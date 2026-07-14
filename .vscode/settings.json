@@ -1,5 +1,0 @@
-{
-  "js/ts.tsdk.path": "./node_modules/typescript",
-  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
-  "js/ts.experimental.useTsgo": true
-}

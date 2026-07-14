@@ -1,9 +1,6 @@
 {
-  // see: https://github.com/Effect-TS/tsgo/issues/346
-  "$schema": "https://raw.githubusercontent.com/Effect-TS/tsgo/f0d48a67515048d277feb2c184c41cd7cffa51a4/schema.json",
   "extends": "@tsconfig/bun",
   "compilerOptions": {
-    "plugins": [{ "name": "@effect/language-service" }],
     "types": ["bun"]
   }
 }

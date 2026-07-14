@@ -1,13 +1,13 @@
 import { App, type AppOptions } from "@slack/bolt";
 import type { KnownBlock } from "@slack/types";
-import { Effect } from "effect";
+import {
+  deleteScheduledMessages,
+  insertScheduledMessage,
+  selectScheduledMessages,
+} from "./database.ts";
 import { onboarding, onboardingStoppedMessage } from "./lang.ts";
-import * as ScheduledMessageStore from "./scheduled-message-store.ts";
 
-export function createApp(
-  options: AppOptions,
-  scheduledMessageStore: ScheduledMessageStore.ScheduledMessageStore,
-): App {
+export function createApp(options: AppOptions): App {
   const app = new App(options);
   const day = Number(process.env.ONBOARDING_DELAY_UNIT_MS ?? 86_400_000);
 
@@ -50,13 +50,11 @@ export function createApp(
         post_at: Math.floor((Date.now() + Number(days) * day) / 1_000),
       });
       if (scheduled.channel && scheduled.scheduled_message_id) {
-        await Effect.runPromise(
-          scheduledMessageStore.insert({
-            userId: event.user.id,
-            channel: scheduled.channel,
-            scheduledMessageId: scheduled.scheduled_message_id,
-          }),
-        );
+        insertScheduledMessage({
+          user_id: event.user.id,
+          channel: scheduled.channel,
+          scheduled_message_id: scheduled.scheduled_message_id,
+        });
       }
     }
   });
@@ -65,18 +63,12 @@ export function createApp(
     await ack();
 
     const userId = body.user.id;
-    const scheduledMessages = await Effect.runPromise(
-      scheduledMessageStore.select(userId),
-    );
     await Promise.allSettled(
-      scheduledMessages.map((message) =>
-        client.chat.deleteScheduledMessage({
-          channel: message.channel,
-          scheduled_message_id: message.scheduledMessageId,
-        }),
+      selectScheduledMessages(userId).map((message) =>
+        client.chat.deleteScheduledMessage(message),
       ),
     );
-    await Effect.runPromise(scheduledMessageStore.delete(userId));
+    deleteScheduledMessages(userId);
     await client.chat.postMessage({
       channel: userId,
       text: onboardingStoppedMessage,
