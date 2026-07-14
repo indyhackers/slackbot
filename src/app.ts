@@ -59,7 +59,8 @@ export function createApp(options: AppOptions): App {
     await ack();
 
     const userId = body.user.id;
-    const results = await Promise.allSettled(
+    let hasError = false;
+    await Promise.allSettled(
       scheduledMessages.select(userId).map(async (message) => {
         try {
           await client.chat.deleteScheduledMessage({
@@ -68,12 +69,13 @@ export function createApp(options: AppOptions): App {
           });
           scheduledMessages.delete(message.scheduled_message_id);
         } catch (error) {
+          hasError = true;
           logger.error(`failed to delete scheduled message ${message.scheduled_message_id}`, error);
           throw error;
         }
       }),
     );
-    if (results.some((result) => result.status === "rejected")) {
+    if (hasError) {
       return;
     }
     await client.chat.postMessage({
