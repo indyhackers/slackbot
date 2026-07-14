@@ -54,6 +54,8 @@ the volume persists scheduled onboarding message IDs across container restarts. 
 ```sh
 bun start            # start once
 bun run dev          # start and restart when files change
+bun run format       # format supported files with dprint
+bun run check-format # check dprint formatting without changing files
 bun run check-types  # run TypeScript checks without emitting files
 bun run test         # run the Bun test runner
 ```

@@ -69,7 +69,7 @@ export function createApp(options: AppOptions): App {
           .catch((error) => {
             hasError = true;
             logger.error(`failed to delete scheduled message ${scheduled_message_id}`, error);
-          }),
+          })
       ),
     );
     if (hasError) {
