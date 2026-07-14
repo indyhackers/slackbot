@@ -1,6 +1,5 @@
-import { App, type AppOptions } from "@slack/bolt";
+import { App, type AppOptions, type BlockButtonAction } from "@slack/bolt";
 import type { KnownBlock } from "@slack/types";
-import { scheduledMessages } from "./database.ts";
 import { onboarding } from "./onboarding.ts";
 
 export function createApp(options: AppOptions): App {
@@ -39,45 +38,67 @@ export function createApp(options: AppOptions): App {
         continue;
       }
 
-      const postAt = Math.floor((Date.now() + offset * intervalMs) / 1_000);
-      const scheduled = await client.chat.scheduleMessage({
+      await client.chat.scheduleMessage({
         channel: event.user.id,
         text,
         blocks,
-        post_at: postAt,
+        post_at: Math.floor((Date.now() + offset * intervalMs) / 1_000),
       });
-      if (scheduled.channel && scheduled.scheduled_message_id) {
-        scheduledMessages.insert({
-          user_id: event.user.id,
-          channel: scheduled.channel,
-          scheduled_message_id: scheduled.scheduled_message_id,
-          post_at: postAt,
-        });
-      }
     }
   });
 
-  app.action("stop_onboarding", async ({ ack, body, client, logger }) => {
+  app.action<BlockButtonAction>("stop_onboarding", async ({ ack, body, client, logger }) => {
     await ack();
 
-    let hasError = false;
-    await Promise.all(
-      scheduledMessages.select(body.user.id).map(({ channel, scheduled_message_id }) =>
-        client.chat
-          .deleteScheduledMessage({ channel, scheduled_message_id })
-          .then(() => scheduledMessages.delete(scheduled_message_id))
-          .catch((error) => {
-            hasError = true;
-            logger.error(`failed to delete scheduled message ${scheduled_message_id}`, error);
-          })
-      ),
-    );
-    if (hasError) {
+    const channel = body.channel?.id;
+    if (!channel) {
+      logger.error("failed to stop onboarding: action is missing its channel");
+      await client.chat.postMessage({
+        channel: body.user.id,
+        text: onboarding.stop.failure,
+      });
       return;
     }
+
+    const scheduledMessageIds: Array<string | undefined> = [];
+    let cursor: string | undefined;
+    try {
+      do {
+        const page = await client.chat.scheduledMessages.list({ channel, cursor });
+        scheduledMessageIds.push(...(page.scheduled_messages ?? []).map(({ id }) => id));
+        cursor = page.response_metadata?.next_cursor || undefined;
+      } while (cursor);
+    } catch (error) {
+      logger.error("failed to list scheduled onboarding messages", error);
+      await client.chat.postMessage({
+        channel,
+        text: onboarding.stop.failure,
+      });
+      return;
+    }
+
+    const stopped = (
+      await Promise.all(
+        scheduledMessageIds.map((scheduledMessageId) => {
+          if (!scheduledMessageId) {
+            logger.error("failed to delete scheduled onboarding message: Slack response is missing its ID");
+            return false;
+          }
+
+          return client.chat
+            .deleteScheduledMessage({ channel, scheduled_message_id: scheduledMessageId })
+            .then(() => true)
+            .catch((error) => {
+              logger.error(`failed to delete scheduled message ${scheduledMessageId}`, error);
+              return false;
+            });
+        }),
+      )
+    ).every(Boolean);
+
     await client.chat.postMessage({
-      channel: body.user.id,
-      text: onboarding.stop.success,
+      channel,
+      text: stopped ? onboarding.stop.success : onboarding.stop.failure,
     });
   });
 

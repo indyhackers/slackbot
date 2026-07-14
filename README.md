@@ -29,6 +29,10 @@ set `ONBOARDING_INTERVAL_MS=60000` to test the 1, 3, 5, and 7 offsets at minute-
 
 the process logs `Indy Hackers Slack bot connected` after opening its Socket Mode connection. stop it with `Ctrl+C`.
 
+## current limitations
+
+currently, every message this app schedules in a user DM is treated as an onboarding message. stopping onboarding deletes all pending messages scheduled by the app in that DM, so don't use the same Slack bot token to schedule other user DM messages until they can be distinguished.
+
 ## container
 
 build the production image:
@@ -43,11 +47,10 @@ run it with Slack credentials supplied through environment variables:
 docker run --rm \
   --env SLACK_BOT_TOKEN \
   --env SLACK_APP_TOKEN \
-  --volume slackbot-data:/data \
   indyhackers-slackbot
 ```
 
-the volume persists scheduled onboarding message IDs across container restarts. the container runs as a non-root user and stops the Bolt app gracefully when it receives `SIGTERM` or `SIGINT`.
+the container runs as a non-root user and stops the Bolt app gracefully when it receives `SIGTERM` or `SIGINT`.
 
 ## commands
 
