@@ -29,67 +29,56 @@ export function createApp(options: AppOptions): App {
   app.command("/onboarding", async ({ ack, command, client, logger, respond }) => {
     await ack();
 
-    if (command.text.trim() !== "stop") {
-      await respond({
-        response_type: "ephemeral",
-        text: onboarding.stop.usage,
-      });
-      return;
-    }
+    switch (command.text.trim()) {
+      case "stop": {
+        try {
+          const channel = (
+            await client.conversations.open({ users: command.user_id })
+          ).channel?.id;
+          if (!channel) {
+            throw new Error("Slack response is missing the onboarding DM channel ID");
+          }
 
-    const conversation = await client.conversations
-      .open({ users: command.user_id })
-      .catch((error) => {
-        logger.error("failed to open onboarding DM", error);
-      });
-    const channel = conversation?.channel?.id;
-    if (!channel) {
-      if (conversation) {
-        logger.error("failed to open onboarding DM: Slack response is missing its channel ID");
-      }
-      await respond({
-        response_type: "ephemeral",
-        text: onboarding.stop.failure,
-      });
-      return;
-    }
+          const { scheduled_messages: scheduledMessages = [] } = await client.chat.scheduledMessages.list({
+            channel,
+            limit: onboarding.steps.length,
+          });
 
-    const page = await client.chat.scheduledMessages
-      .list({ channel, limit: onboarding.steps.length })
-      .catch((error) => {
-        logger.error("failed to list scheduled onboarding messages", error);
-      });
-    if (!page) {
-      await respond({
-        response_type: "ephemeral",
-        text: onboarding.stop.failure,
-      });
-      return;
-    }
+          await Promise.all(
+            scheduledMessages.map(async ({ id }) => {
+              if (!id) {
+                throw new Error("Slack response is missing a scheduled onboarding message ID");
+              }
 
-    const deletionResults = await Promise.all(
-      (page.scheduled_messages ?? []).map(({ id }) => {
-        if (!id) {
-          logger.error("failed to delete scheduled onboarding message: Slack response is missing its ID");
-          return false;
+              await client.chat.deleteScheduledMessage({
+                channel,
+                scheduled_message_id: id,
+              });
+            }),
+          );
+        } catch (error) {
+          logger.error("failed to stop onboarding", error);
+
+          await respond({
+            response_type: "ephemeral",
+            text: onboarding.stop.failure,
+          });
+          return;
         }
 
-        return client.chat
-          .deleteScheduledMessage({ channel, scheduled_message_id: id })
-          .then(() => true)
-          .catch((error) => {
-            logger.error(`failed to delete scheduled message ${id}`, error);
-            return false;
-          });
-      }),
-    );
+        await respond({
+          response_type: "ephemeral",
+          text: onboarding.stop.success,
+        });
+        return;
+      }
 
-    await respond({
-      response_type: "ephemeral",
-      text: deletionResults.some((isDeleted) => !isDeleted)
-        ? onboarding.stop.failure
-        : onboarding.stop.success,
-    });
+      default:
+        await respond({
+          response_type: "ephemeral",
+          text: onboarding.stop.usage,
+        });
+    }
   });
 
   return app;
