@@ -75,7 +75,7 @@ export function createApp(options: AppOptions): App {
     }
     await client.chat.postMessage({
       channel: body.user.id,
-      text: onboarding.stop.succeeded,
+      text: onboarding.stop.success,
     });
   });
 

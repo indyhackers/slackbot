@@ -2,8 +2,8 @@ import channels from "./onboarding/channels.txt";
 import communityGoals from "./onboarding/community-goals.txt";
 import events from "./onboarding/events.txt";
 import introductions from "./onboarding/introductions.txt";
-import stopFailed from "./onboarding/stop-failed.txt";
-import stopped from "./onboarding/stopped.txt";
+import stopFailure from "./onboarding/stop-failure.txt";
+import stopSuccess from "./onboarding/stop-success.txt";
 import welcome from "./onboarding/welcome.txt";
 
 export const onboarding = {
@@ -15,7 +15,7 @@ export const onboarding = {
     { offset: 7, text: communityGoals.trim() },
   ],
   stop: {
-    succeeded: stopped.trim(),
-    failed: stopFailed.trim(),
+    success: stopSuccess.trim(),
+    failure: stopFailure.trim(),
   },
 } as const;
