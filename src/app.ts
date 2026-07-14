@@ -55,24 +55,26 @@ export function createApp(options: AppOptions): App {
     }
   });
 
-  app.action("stop_onboarding", async ({ ack, body, client }) => {
+  app.action("stop_onboarding", async ({ ack, body, client, logger }) => {
     await ack();
 
     const userId = body.user.id;
-    const errors: unknown[] = [];
-    for (const message of scheduledMessages.select(userId)) {
-      try {
-        await client.chat.deleteScheduledMessage({
-          channel: message.channel,
-          scheduled_message_id: message.scheduled_message_id,
-        });
-        scheduledMessages.delete(message.scheduled_message_id);
-      } catch (error) {
-        errors.push(error);
-      }
-    }
-    if (errors.length > 0) {
-      throw new AggregateError(errors, "failed to delete scheduled onboarding messages");
+    const results = await Promise.allSettled(
+      scheduledMessages.select(userId).map(async (message) => {
+        try {
+          await client.chat.deleteScheduledMessage({
+            channel: message.channel,
+            scheduled_message_id: message.scheduled_message_id,
+          });
+          scheduledMessages.delete(message.scheduled_message_id);
+        } catch (error) {
+          logger.error(`failed to delete scheduled message ${message.scheduled_message_id}`, error);
+          throw error;
+        }
+      }),
+    );
+    if (results.some((result) => result.status === "rejected")) {
+      return;
     }
     await client.chat.postMessage({
       channel: userId,
