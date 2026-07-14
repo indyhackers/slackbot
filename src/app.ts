@@ -59,12 +59,20 @@ export function createApp(options: AppOptions): App {
     await ack();
 
     const userId = body.user.id;
+    const errors: unknown[] = [];
     for (const message of scheduledMessages.select(userId)) {
-      await client.chat.deleteScheduledMessage({
-        channel: message.channel,
-        scheduled_message_id: message.scheduled_message_id,
-      });
-      scheduledMessages.delete(message.scheduled_message_id);
+      try {
+        await client.chat.deleteScheduledMessage({
+          channel: message.channel,
+          scheduled_message_id: message.scheduled_message_id,
+        });
+        scheduledMessages.delete(message.scheduled_message_id);
+      } catch (error) {
+        errors.push(error);
+      }
+    }
+    if (errors.length > 0) {
+      throw new AggregateError(errors, "failed to delete scheduled onboarding messages");
     }
     await client.chat.postMessage({
       channel: userId,
