@@ -1,7 +1,8 @@
 import { App, type AppOptions } from "@slack/bolt";
 import type { KnownBlock } from "@slack/types";
 import { scheduledMessages } from "./database.ts";
-import { onboarding, onboardingStoppedMessage } from "./lang.ts";
+import { onboardingStoppedMessage } from "./lang.ts";
+import { onboarding } from "./onboarding.ts";
 
 export function createApp(options: AppOptions): App {
   const app = new App(options);
@@ -12,7 +13,7 @@ export function createApp(options: AppOptions): App {
       return;
     }
 
-    for (const [days, text] of Object.entries(onboarding)) {
+    for (const { days, text } of onboarding) {
       const blocks: KnownBlock[] = [
         {
           type: "section",
@@ -30,7 +31,7 @@ export function createApp(options: AppOptions): App {
         },
       ];
 
-      if (days === "0") {
+      if (days === 0) {
         await client.chat.postMessage({
           channel: event.user.id,
           text,
@@ -43,7 +44,7 @@ export function createApp(options: AppOptions): App {
         channel: event.user.id,
         text,
         blocks,
-        post_at: Math.floor((Date.now() + Number(days) * day) / 1_000),
+        post_at: Math.floor((Date.now() + days * day) / 1_000),
       });
       if (scheduled.channel && scheduled.scheduled_message_id) {
         scheduledMessages.insert({
