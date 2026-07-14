@@ -17,23 +17,20 @@ interface ScheduledMessage {
 }
 
 export const scheduledMessages = {
-  insert(...params: [
+  insert: (...params: [
     userId: ScheduledMessage["user_id"],
     channel: ScheduledMessage["channel"],
     scheduledMessageId: ScheduledMessage["scheduled_message_id"],
-  ]) {
-    return database.query<unknown, typeof params>(
+  ]) =>
+    database.query<unknown, typeof params>(
       "INSERT INTO scheduled_messages VALUES (?, ?, ?)",
-    ).run(...params);
-  },
-  select(...params: [userId: ScheduledMessage["user_id"]]) {
-    return database.query<ScheduledMessage, typeof params>(
+    ).run(...params),
+  select: (...params: [userId: ScheduledMessage["user_id"]]) =>
+    database.query<ScheduledMessage, typeof params>(
       "SELECT * FROM scheduled_messages WHERE user_id = ?",
-    ).all(...params);
-  },
-  delete(...params: [userId: ScheduledMessage["user_id"]]) {
-    return database.query<unknown, typeof params>(
+    ).all(...params),
+  delete: (...params: [userId: ScheduledMessage["user_id"]]) =>
+    database.query<unknown, typeof params>(
       "DELETE FROM scheduled_messages WHERE user_id = ?",
-    ).run(...params);
-  },
+    ).run(...params),
 };
