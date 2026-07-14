@@ -50,8 +50,7 @@ export function createApp(options: AppOptions): App {
   app.action("stop_onboarding", async ({ ack, body, client, logger }) => {
     await ack();
 
-    const channel = body.channel?.id;
-    if (!channel) {
+    if (!body.channel?.id) {
       logger.error("failed to stop onboarding: action is missing its channel");
       await client.chat.postMessage({
         channel: body.user.id,
@@ -61,13 +60,13 @@ export function createApp(options: AppOptions): App {
     }
 
     const page = await client.chat.scheduledMessages
-      .list({ channel, limit: onboarding.steps.length })
+      .list({ channel: body.channel.id, limit: onboarding.steps.length })
       .catch((error) => {
         logger.error("failed to list scheduled onboarding messages", error);
       });
     if (!page) {
       await client.chat.postMessage({
-        channel,
+        channel: body.channel.id,
         text: onboarding.stop.failure,
       });
       return;
@@ -81,7 +80,7 @@ export function createApp(options: AppOptions): App {
         }
 
         return client.chat
-          .deleteScheduledMessage({ channel, scheduled_message_id: id })
+          .deleteScheduledMessage({ channel: body.channel!.id!, scheduled_message_id: id })
           .then(() => true)
           .catch((error) => {
             logger.error(`failed to delete scheduled message ${id}`, error);
@@ -91,7 +90,7 @@ export function createApp(options: AppOptions): App {
     );
 
     await client.chat.postMessage({
-      channel,
+      channel: body.channel.id,
       text: deletionResults.some((isDeleted) => !isDeleted)
         ? onboarding.stop.failure
         : onboarding.stop.success,
