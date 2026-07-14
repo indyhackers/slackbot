@@ -9,24 +9,15 @@ database.run(`
     user_id TEXT NOT NULL,
     channel TEXT NOT NULL,
     scheduled_message_id TEXT PRIMARY KEY,
-    post_at INTEGER
+    post_at INTEGER NOT NULL
   ) STRICT
 `);
-
-if (
-  !database
-    .query<{ name: string }, []>("PRAGMA table_info(scheduled_messages)")
-    .all()
-    .some(({ name }) => name === "post_at")
-) {
-  database.run("ALTER TABLE scheduled_messages ADD COLUMN post_at INTEGER");
-}
 
 type ScheduledMessage = {
   user_id: string;
   channel: string;
   scheduled_message_id: string;
-  post_at: number | null;
+  post_at: number;
 };
 
 export const scheduledMessages = {
