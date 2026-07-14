@@ -39,17 +39,19 @@ export function createApp(options: AppOptions): App {
         continue;
       }
 
+      const postAt = Math.floor((Date.now() + offset * intervalMs) / 1_000);
       const scheduled = await client.chat.scheduleMessage({
         channel: event.user.id,
         text,
         blocks,
-        post_at: Math.floor((Date.now() + offset * intervalMs) / 1_000),
+        post_at: postAt,
       });
       if (scheduled.channel && scheduled.scheduled_message_id) {
         scheduledMessages.insert({
           user_id: event.user.id,
           channel: scheduled.channel,
           scheduled_message_id: scheduled.scheduled_message_id,
+          post_at: postAt,
         });
       }
     }

@@ -8,20 +8,33 @@ database.run(`
   CREATE TABLE IF NOT EXISTS scheduled_messages (
     user_id TEXT NOT NULL,
     channel TEXT NOT NULL,
-    scheduled_message_id TEXT PRIMARY KEY
+    scheduled_message_id TEXT PRIMARY KEY,
+    post_at INTEGER
   ) STRICT
 `);
+
+if (
+  !database
+    .query<{ name: string }, []>("PRAGMA table_info(scheduled_messages)")
+    .all()
+    .some(({ name }) => name === "post_at")
+) {
+  database.run("ALTER TABLE scheduled_messages ADD COLUMN post_at INTEGER");
+}
 
 type ScheduledMessage = {
   user_id: string;
   channel: string;
   scheduled_message_id: string;
+  post_at: number | null;
 };
 
 export const scheduledMessages = {
   insert: (message: ScheduledMessage) =>
     database
-      .query<unknown, ScheduledMessage>("INSERT INTO scheduled_messages VALUES ($user_id, $channel, $scheduled_message_id)")
+      .query<unknown, ScheduledMessage>(
+        "INSERT INTO scheduled_messages VALUES ($user_id, $channel, $scheduled_message_id, $post_at)",
+      )
       .run(message),
 
   select: (...params: [userId: ScheduledMessage["user_id"]]) =>
