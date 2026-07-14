@@ -17,32 +17,23 @@ interface ScheduledMessage {
 }
 
 export const scheduledMessages = {
-  insert: (() => {
-    const statement = database.query<
-      unknown,
-      [
-        userId: ScheduledMessage["user_id"],
-        channel: ScheduledMessage["channel"],
-        scheduledMessageId: ScheduledMessage["scheduled_message_id"],
-      ]
-    >(
+  insert(...params: [
+    userId: ScheduledMessage["user_id"],
+    channel: ScheduledMessage["channel"],
+    scheduledMessageId: ScheduledMessage["scheduled_message_id"],
+  ]) {
+    return database.query<unknown, typeof params>(
       "INSERT INTO scheduled_messages VALUES (?, ?, ?)",
-    );
-    return statement.run.bind(statement);
-  })(),
-  select: (() => {
-    const statement = database.query<
-      ScheduledMessage,
-      [userId: ScheduledMessage["user_id"]]
-    >(
+    ).run(...params);
+  },
+  select(...params: [userId: ScheduledMessage["user_id"]]) {
+    return database.query<ScheduledMessage, typeof params>(
       "SELECT * FROM scheduled_messages WHERE user_id = ?",
-    );
-    return statement.all.bind(statement);
-  })(),
-  delete: (() => {
-    const statement = database.query<unknown, [userId: ScheduledMessage["user_id"]]>(
+    ).all(...params);
+  },
+  delete(...params: [userId: ScheduledMessage["user_id"]]) {
+    return database.query<unknown, typeof params>(
       "DELETE FROM scheduled_messages WHERE user_id = ?",
-    );
-    return statement.run.bind(statement);
-  })(),
+    ).run(...params);
+  },
 };
