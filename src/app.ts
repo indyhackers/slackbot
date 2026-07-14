@@ -1,4 +1,4 @@
-import { App, type AppOptions, type BlockButtonAction } from "@slack/bolt";
+import { App, type AppOptions } from "@slack/bolt";
 import type { KnownBlock } from "@slack/types";
 import { onboarding } from "./onboarding.ts";
 
@@ -47,7 +47,7 @@ export function createApp(options: AppOptions): App {
     }
   });
 
-  app.action<BlockButtonAction>("stop_onboarding", async ({ ack, body, client, logger }) => {
+  app.action("stop_onboarding", async ({ ack, body, client, logger }) => {
     await ack();
 
     const channel = body.channel?.id;
@@ -60,16 +60,12 @@ export function createApp(options: AppOptions): App {
       return;
     }
 
-    const scheduledMessageIds: Array<string | undefined> = [];
-    let cursor: string | undefined;
-    try {
-      do {
-        const page = await client.chat.scheduledMessages.list({ channel, cursor });
-        scheduledMessageIds.push(...(page.scheduled_messages ?? []).map(({ id }) => id));
-        cursor = page.response_metadata?.next_cursor || undefined;
-      } while (cursor);
-    } catch (error) {
-      logger.error("failed to list scheduled onboarding messages", error);
+    const page = await client.chat.scheduledMessages
+      .list({ channel, limit: onboarding.steps.length })
+      .catch((error) => {
+        logger.error("failed to list scheduled onboarding messages", error);
+      });
+    if (!page) {
       await client.chat.postMessage({
         channel,
         text: onboarding.stop.failure,
@@ -77,28 +73,28 @@ export function createApp(options: AppOptions): App {
       return;
     }
 
-    const stopped = (
-      await Promise.all(
-        scheduledMessageIds.map((scheduledMessageId) => {
-          if (!scheduledMessageId) {
-            logger.error("failed to delete scheduled onboarding message: Slack response is missing its ID");
-            return false;
-          }
+    const deletionResults = await Promise.all(
+      (page.scheduled_messages ?? []).map(({ id }) => {
+        if (!id) {
+          logger.error("failed to delete scheduled onboarding message: Slack response is missing its ID");
+          return false;
+        }
 
-          return client.chat
-            .deleteScheduledMessage({ channel, scheduled_message_id: scheduledMessageId })
-            .then(() => true)
-            .catch((error) => {
-              logger.error(`failed to delete scheduled message ${scheduledMessageId}`, error);
-              return false;
-            });
-        }),
-      )
-    ).every(Boolean);
+        return client.chat
+          .deleteScheduledMessage({ channel, scheduled_message_id: id })
+          .then(() => true)
+          .catch((error) => {
+            logger.error(`failed to delete scheduled message ${id}`, error);
+            return false;
+          });
+      }),
+    );
 
     await client.chat.postMessage({
       channel,
-      text: stopped ? onboarding.stop.success : onboarding.stop.failure,
+      text: deletionResults.some((isDeleted) => !isDeleted)
+        ? onboarding.stop.failure
+        : onboarding.stop.success,
     });
   });
 
