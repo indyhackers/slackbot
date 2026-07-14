@@ -1,7 +1,6 @@
 import { App, type AppOptions } from "@slack/bolt";
 import type { KnownBlock } from "@slack/types";
 import { scheduledMessages } from "./database.ts";
-import { onboardingStoppedMessage } from "./lang.ts";
 import { onboarding } from "./onboarding.ts";
 
 export function createApp(options: AppOptions): App {
@@ -68,7 +67,7 @@ export function createApp(options: AppOptions): App {
     scheduledMessages.delete(userId);
     await client.chat.postMessage({
       channel: userId,
-      text: onboardingStoppedMessage,
+      text: "your Indy Hackers onboarding has stopped. you're all set!",
     });
   });
 

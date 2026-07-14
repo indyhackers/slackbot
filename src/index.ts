@@ -1,7 +1,4 @@
-import { format } from "node:util";
-
 import { createApp } from "./app.ts";
-import { connectedMessage, stopFailedMessage, stoppingMessage } from "./lang.ts";
 
 const app = createApp({
   token: process.env.SLACK_BOT_TOKEN,
@@ -10,7 +7,7 @@ const app = createApp({
 });
 
 await app.start();
-console.log(connectedMessage);
+console.log("Indy Hackers Slack bot connected");
 
 let stopping = false;
 
@@ -20,12 +17,12 @@ async function stop(signal: NodeJS.Signals): Promise<void> {
   }
 
   stopping = true;
-  console.log(format(stoppingMessage, signal));
+  console.log(`received ${signal}; stopping Indy Hackers Slack bot`);
 
   try {
     await app.stop();
   } catch (error) {
-    console.error(stopFailedMessage, error);
+    console.error("failed to stop Indy Hackers Slack bot", error);
     process.exitCode = 1;
   }
 }
