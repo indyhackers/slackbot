@@ -22,15 +22,17 @@ export const scheduledMessages = {
     channel: ScheduledMessage["channel"],
     scheduledMessageId: ScheduledMessage["scheduled_message_id"],
   ]) =>
-    database.query<unknown, typeof params>(
-      "INSERT INTO scheduled_messages VALUES (?, ?, ?)",
-    ).run(...params),
+    database
+      .query<unknown, typeof params>("INSERT INTO scheduled_messages VALUES (?, ?, ?)")
+      .run(...params),
+
   select: (...params: [userId: ScheduledMessage["user_id"]]) =>
-    database.query<ScheduledMessage, typeof params>(
-      "SELECT * FROM scheduled_messages WHERE user_id = ?",
-    ).all(...params),
+    database
+      .query<ScheduledMessage, typeof params>("SELECT * FROM scheduled_messages WHERE user_id = ?")
+      .all(...params),
+
   delete: (...params: [userId: ScheduledMessage["user_id"]]) =>
-    database.query<unknown, typeof params>(
-      "DELETE FROM scheduled_messages WHERE user_id = ?",
-    ).run(...params),
+    database
+      .query<unknown, typeof params>("DELETE FROM scheduled_messages WHERE user_id = ?")
+      .run(...params),
 };
