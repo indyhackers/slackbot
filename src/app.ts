@@ -64,8 +64,8 @@ export function createApp(options: AppOptions): App {
         channel: message.channel,
         scheduled_message_id: message.scheduled_message_id,
       });
+      scheduledMessages.delete(message.scheduled_message_id);
     }
-    scheduledMessages.delete(userId);
     await client.chat.postMessage({
       channel: userId,
       text: onboardingStopped,

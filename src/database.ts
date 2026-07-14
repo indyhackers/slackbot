@@ -29,8 +29,8 @@ export const scheduledMessages = {
       .query<ScheduledMessage, typeof params>("SELECT * FROM scheduled_messages WHERE user_id = ?")
       .all(...params),
 
-  delete: (...params: [userId: ScheduledMessage["user_id"]]) =>
+  delete: (...params: [scheduledMessageId: ScheduledMessage["scheduled_message_id"]]) =>
     database
-      .query<unknown, typeof params>("DELETE FROM scheduled_messages WHERE user_id = ?")
+      .query<unknown, typeof params>("DELETE FROM scheduled_messages WHERE scheduled_message_id = ?")
       .run(...params),
 };
