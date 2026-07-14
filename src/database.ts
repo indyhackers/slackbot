@@ -19,12 +19,10 @@ type ScheduledMessage = {
 };
 
 export const scheduledMessages = {
-  insert: (params: ScheduledMessage) =>
+  insert: (message: ScheduledMessage) =>
     database
-      .query<unknown, typeof params>(
-        "INSERT INTO scheduled_messages VALUES ($user_id, $channel, $scheduled_message_id)",
-      )
-      .run(params),
+      .query<unknown, ScheduledMessage>("INSERT INTO scheduled_messages VALUES ($user_id, $channel, $scheduled_message_id)")
+      .run(message),
 
   select: (...params: [userId: ScheduledMessage["user_id"]]) =>
     database
