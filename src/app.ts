@@ -6,14 +6,14 @@ import { onboarding } from "./onboarding.ts";
 
 export function createApp(options: AppOptions): App {
   const app = new App(options);
-  const day = Number(process.env.ONBOARDING_DELAY_UNIT_MS ?? 86_400_000);
+  const intervalMs = Number(process.env.ONBOARDING_INTERVAL_MS ?? 86_400_000);
 
   app.event("team_join", async ({ event, client }) => {
     if (event.user.is_bot) {
       return;
     }
 
-    for (const { days, text } of onboarding) {
+    for (const { offset, text } of onboarding) {
       const blocks: KnownBlock[] = [
         {
           type: "section",
@@ -31,7 +31,7 @@ export function createApp(options: AppOptions): App {
         },
       ];
 
-      if (days === 0) {
+      if (offset === 0) {
         await client.chat.postMessage({
           channel: event.user.id,
           text,
@@ -44,7 +44,7 @@ export function createApp(options: AppOptions): App {
         channel: event.user.id,
         text,
         blocks,
-        post_at: Math.floor((Date.now() + days * day) / 1_000),
+        post_at: Math.floor((Date.now() + offset * intervalMs) / 1_000),
       });
       if (scheduled.channel && scheduled.scheduled_message_id) {
         scheduledMessages.insert({

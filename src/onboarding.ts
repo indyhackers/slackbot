@@ -5,9 +5,9 @@ import introductions from "./onboarding/introductions.txt";
 import welcome from "./onboarding/welcome.txt";
 
 export const onboarding = [
-  { days: 0, text: welcome.trim() },
-  { days: 1, text: introductions.trim() },
-  { days: 3, text: channels.trim() },
-  { days: 5, text: events.trim() },
-  { days: 7, text: communityGoals.trim() },
+  { offset: 0, text: welcome.trim() },
+  { offset: 1, text: introductions.trim() },
+  { offset: 3, text: channels.trim() },
+  { offset: 5, text: events.trim() },
+  { offset: 7, text: communityGoals.trim() },
 ] as const;

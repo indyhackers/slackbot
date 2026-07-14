@@ -25,7 +25,7 @@ set `SLACK_BOT_TOKEN` and `SLACK_APP_TOKEN` in `.env`, then start the bot:
 bun run dev
 ```
 
-set `ONBOARDING_DELAY_UNIT_MS=60000` to test the day 1, 3, 5, and 7 follow-ups at minute-scale delays. when unset, each delay unit is one day.
+set `ONBOARDING_INTERVAL_MS=60000` to test the 1, 3, 5, and 7 offsets at minute-scale intervals. when unset, the interval is 86,400,000 ms (one day).
 
 the process logs `Indy Hackers Slack bot connected` after opening its Socket Mode connection. stop it with `Ctrl+C`.
 
