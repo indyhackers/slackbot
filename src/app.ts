@@ -26,12 +26,12 @@ export function createApp(options: AppOptions): App {
     }
   });
 
-  app.command("/onboarding", async ({ ack, command, client, logger }) => {
+  app.command("/onboarding", async ({ ack, command, client, logger, respond }) => {
     await ack();
 
     if (command.text.trim() !== "stop") {
-      await client.chat.postMessage({
-        channel: command.user_id,
+      await respond({
+        response_type: "ephemeral",
         text: onboarding.stop.usage,
       });
       return;
@@ -47,8 +47,8 @@ export function createApp(options: AppOptions): App {
       if (conversation) {
         logger.error("failed to open onboarding DM: Slack response is missing its channel ID");
       }
-      await client.chat.postMessage({
-        channel: command.user_id,
+      await respond({
+        response_type: "ephemeral",
         text: onboarding.stop.failure,
       });
       return;
@@ -60,8 +60,8 @@ export function createApp(options: AppOptions): App {
         logger.error("failed to list scheduled onboarding messages", error);
       });
     if (!page) {
-      await client.chat.postMessage({
-        channel,
+      await respond({
+        response_type: "ephemeral",
         text: onboarding.stop.failure,
       });
       return;
@@ -84,8 +84,8 @@ export function createApp(options: AppOptions): App {
       }),
     );
 
-    await client.chat.postMessage({
-      channel,
+    await respond({
+      response_type: "ephemeral",
       text: deletionResults.some((isDeleted) => !isDeleted)
         ? onboarding.stop.failure
         : onboarding.stop.success,
