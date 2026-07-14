@@ -58,10 +58,9 @@ export function createApp(options: AppOptions): App {
   app.action("stop_onboarding", async ({ ack, body, client, logger }) => {
     await ack();
 
-    const userId = body.user.id;
     let hasError = false;
     await Promise.allSettled(
-      scheduledMessages.select(userId).map(async (message) => {
+      scheduledMessages.select(body.user.id).map(async (message) => {
         try {
           await client.chat.deleteScheduledMessage({
             channel: message.channel,
@@ -79,7 +78,7 @@ export function createApp(options: AppOptions): App {
       return;
     }
     await client.chat.postMessage({
-      channel: userId,
+      channel: body.user.id,
       text: onboardingStopped,
     });
   });
