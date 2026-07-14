@@ -62,10 +62,7 @@ export function createApp(options: AppOptions): App {
     await Promise.all(
       scheduledMessages.select(body.user.id).map(({ channel, scheduled_message_id }) =>
         client.chat
-          .deleteScheduledMessage({
-            channel,
-            scheduled_message_id,
-          })
+          .deleteScheduledMessage({ channel, scheduled_message_id })
           .then(() => scheduledMessages.delete(scheduled_message_id))
           .catch((error) => {
             hasError = true;
