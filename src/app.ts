@@ -16,14 +16,13 @@ export function createApp(options: AppOptions): App {
           channel: event.user.id,
           text,
         });
-        continue;
+      } else {
+        await client.chat.scheduleMessage({
+          channel: event.user.id,
+          text,
+          post_at: Math.floor((Date.now() + offset * intervalMs) / 1_000),
+        });
       }
-
-      await client.chat.scheduleMessage({
-        channel: event.user.id,
-        text,
-        post_at: Math.floor((Date.now() + offset * intervalMs) / 1_000),
-      });
     }
   });
 
