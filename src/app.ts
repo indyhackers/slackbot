@@ -59,20 +59,19 @@ export function createApp(options: AppOptions): App {
     await ack();
 
     let hasError = false;
-    await Promise.allSettled(
-      scheduledMessages.select(body.user.id).map(async (message) => {
-        try {
-          await client.chat.deleteScheduledMessage({
+    await Promise.all(
+      scheduledMessages.select(body.user.id).map((message) =>
+        client.chat
+          .deleteScheduledMessage({
             channel: message.channel,
             scheduled_message_id: message.scheduled_message_id,
-          });
-          scheduledMessages.delete(message.scheduled_message_id);
-        } catch (error) {
-          hasError = true;
-          logger.error(`failed to delete scheduled message ${message.scheduled_message_id}`, error);
-          throw error;
-        }
-      }),
+          })
+          .then(() => scheduledMessages.delete(message.scheduled_message_id))
+          .catch((error) => {
+            hasError = true;
+            logger.error(`failed to delete scheduled message ${message.scheduled_message_id}`, error);
+          }),
+      ),
     );
     if (hasError) {
       return;
