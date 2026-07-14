@@ -1,7 +1,7 @@
 import { App, type AppOptions } from "@slack/bolt";
 import type { KnownBlock } from "@slack/types";
 import { scheduledMessages } from "./database.ts";
-import { onboarding, onboardingStopped } from "./onboarding.ts";
+import { onboarding } from "./onboarding.ts";
 
 export function createApp(options: AppOptions): App {
   const app = new App(options);
@@ -12,7 +12,7 @@ export function createApp(options: AppOptions): App {
       return;
     }
 
-    for (const { offset, text } of onboarding) {
+    for (const { offset, text } of onboarding.steps) {
       const blocks: KnownBlock[] = [
         {
           type: "section",
@@ -75,7 +75,7 @@ export function createApp(options: AppOptions): App {
     }
     await client.chat.postMessage({
       channel: body.user.id,
-      text: onboardingStopped,
+      text: onboarding.stop.succeeded,
     });
   });
 
