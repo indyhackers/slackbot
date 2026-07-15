@@ -16,71 +16,36 @@ export function createApp(options: AppOptions): App {
     const { ack, command, logger, respond } = args;
     await ack();
 
-    switch (command.text.trim()) {
-      case "start": {
-        let started: boolean;
-
-        try {
-          started = await onboardingStart(args);
-        } catch (error) {
-          logger.error("failed to start onboarding", error);
-
-          await respond({
-            response_type: "ephemeral",
-            text: onboarding.start.failure,
-          });
-          return;
-        }
-
-        await respond({
-          response_type: "ephemeral",
-          text: started ? onboarding.start.success : onboarding.start.active,
-        });
-        return;
-      }
-
-      case "stop": {
-        let hadScheduledMessages: boolean;
-
-        try {
-          hadScheduledMessages = await onboardingStop(args);
-        } catch (error) {
-          logger.error("failed to stop onboarding", error);
-
-          await respond({
-            response_type: "ephemeral",
-            text: onboarding.stop.failure,
-          });
-          return;
-        }
-
-        await respond({
-          response_type: "ephemeral",
-          text: hadScheduledMessages ? onboarding.stop.success : onboarding.stop.empty,
-        });
-        return;
-      }
-
-      default:
-        await respond({
-          response_type: "ephemeral",
-          text: onboarding.usage,
-        });
+    const action = command.text.trim();
+    if (action !== "start" && action !== "stop") {
+      await respond({
+        response_type: "ephemeral",
+        text: onboarding.usage,
+      });
+      return;
     }
+
+    const run = action === "start" ? onboardingStart : onboardingStop;
+    const unchanged = action === "start" ? onboarding.start.active : onboarding.stop.empty;
+    const text = await run(args)
+      .then((changed) => changed ? onboarding[action].success : unchanged)
+      .catch((error: unknown) => {
+        logger.error(`failed to ${action} onboarding`, error);
+        return onboarding[action].failure;
+      });
+
+    await respond({
+      response_type: "ephemeral",
+      text,
+    });
   });
 
   return app;
 }
 
-async function onboardingStart({ client, context }: AllMiddlewareArgs) {
-  if (!context.userId) {
-    throw new Error("Slack context is missing the onboarding user ID");
-  }
-
-  const channel = (await client.conversations.open({ users: context.userId })).channel?.id;
-  if (!channel) {
-    throw new Error("Slack response is missing the onboarding DM channel ID");
-  }
+async function onboardingStart(args: AllMiddlewareArgs) {
+  const { client } = args;
+  const channel = await openOnboardingChannel(args);
 
   const { scheduled_messages: scheduledMessages = [] } = await client.chat.scheduledMessages.list({
     channel,
@@ -110,15 +75,9 @@ async function onboardingStart({ client, context }: AllMiddlewareArgs) {
   return true;
 }
 
-async function onboardingStop({ client, context }: AllMiddlewareArgs) {
-  if (!context.userId) {
-    throw new Error("Slack context is missing the onboarding user ID");
-  }
-
-  const channel = (await client.conversations.open({ users: context.userId })).channel?.id;
-  if (!channel) {
-    throw new Error("Slack response is missing the onboarding DM channel ID");
-  }
+async function onboardingStop(args: AllMiddlewareArgs) {
+  const { client } = args;
+  const channel = await openOnboardingChannel(args);
 
   const { scheduled_messages: scheduledMessages = [] } = await client.chat.scheduledMessages.list({
     channel,
@@ -142,4 +101,17 @@ async function onboardingStop({ client, context }: AllMiddlewareArgs) {
   );
 
   return true;
+}
+
+async function openOnboardingChannel({ client, context }: AllMiddlewareArgs) {
+  if (!context.userId) {
+    throw new Error("Slack context is missing the onboarding user ID");
+  }
+
+  const channel = (await client.conversations.open({ users: context.userId })).channel?.id;
+  if (!channel) {
+    throw new Error("Slack response is missing the onboarding DM channel ID");
+  }
+
+  return channel;
 }
