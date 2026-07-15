@@ -1,25 +1,25 @@
-import { App, type AppOptions } from "@slack/bolt";
+import { type AllMiddlewareArgs, App, type AppOptions } from "@slack/bolt";
 import { onboarding } from "./onboarding.ts";
 
 export function createApp(options: AppOptions): App {
   const app = new App(options);
-  const intervalMs = Number(process.env.ONBOARDING_INTERVAL_MS ?? 86_400_000);
 
-  app.event("team_join", async ({ event, client }) => {
-    if (event.user.is_bot) {
+  app.event("team_join", async (args) => {
+    if (args.event.user.is_bot) {
       return;
     }
 
-    await onboardingStart(event.user.id, client, intervalMs);
+    await onboardingStart(args);
   });
 
-  app.command("/onboarding", async ({ ack, command, client, logger, respond }) => {
+  app.command("/onboarding", async (args) => {
+    const { ack, command, logger, respond } = args;
     await ack();
 
     switch (command.text.trim()) {
       case "stop": {
         try {
-          await onboardingStop(command.user_id, client);
+          await onboardingStop(args);
         } catch (error) {
           logger.error("failed to stop onboarding", error);
 
@@ -48,7 +48,14 @@ export function createApp(options: AppOptions): App {
   return app;
 }
 
-async function onboardingStart(userId: string, client: App["client"], intervalMs: number) {
+async function onboardingStart({ client, context }: AllMiddlewareArgs) {
+  const userId = context.userId;
+  if (!userId) {
+    throw new Error("Slack context is missing the onboarding user ID");
+  }
+
+  const intervalMs = Number(process.env.ONBOARDING_INTERVAL_MS ?? 86_400_000);
+
   for (const { offset, text } of onboarding.steps) {
     if (offset === 0) {
       await client.chat.postMessage({
@@ -65,7 +72,12 @@ async function onboardingStart(userId: string, client: App["client"], intervalMs
   }
 }
 
-async function onboardingStop(userId: string, client: App["client"]) {
+async function onboardingStop({ client, context }: AllMiddlewareArgs) {
+  const userId = context.userId;
+  if (!userId) {
+    throw new Error("Slack context is missing the onboarding user ID");
+  }
+
   const channel = (await client.conversations.open({ users: userId })).channel?.id;
   if (!channel) {
     throw new Error("Slack response is missing the onboarding DM channel ID");
