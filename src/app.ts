@@ -10,20 +10,7 @@ export function createApp(options: AppOptions): App {
       return;
     }
 
-    for (const { offset, text } of onboarding.steps) {
-      if (offset === 0) {
-        await client.chat.postMessage({
-          channel: event.user.id,
-          text,
-        });
-      } else {
-        await client.chat.scheduleMessage({
-          channel: event.user.id,
-          text,
-          post_at: Math.floor((Date.now() + offset * intervalMs) / 1_000),
-        });
-      }
-    }
+    await onboardingStart(event.user.id, client, intervalMs);
   });
 
   app.command("/onboarding", async ({ ack, command, client, logger, respond }) => {
@@ -32,30 +19,7 @@ export function createApp(options: AppOptions): App {
     switch (command.text.trim()) {
       case "stop": {
         try {
-          const channel = (
-            await client.conversations.open({ users: command.user_id })
-          ).channel?.id;
-          if (!channel) {
-            throw new Error("Slack response is missing the onboarding DM channel ID");
-          }
-
-          const { scheduled_messages: scheduledMessages = [] } = await client.chat.scheduledMessages.list({
-            channel,
-            limit: onboarding.steps.length,
-          });
-
-          await Promise.all(
-            scheduledMessages.map(async ({ id }) => {
-              if (!id) {
-                throw new Error("Slack response is missing a scheduled onboarding message ID");
-              }
-
-              await client.chat.deleteScheduledMessage({
-                channel,
-                scheduled_message_id: id,
-              });
-            }),
-          );
+          await onboardingStop(command.user_id, client);
         } catch (error) {
           logger.error("failed to stop onboarding", error);
 
@@ -82,4 +46,46 @@ export function createApp(options: AppOptions): App {
   });
 
   return app;
+}
+
+async function onboardingStart(userId: string, client: App["client"], intervalMs: number) {
+  for (const { offset, text } of onboarding.steps) {
+    if (offset === 0) {
+      await client.chat.postMessage({
+        channel: userId,
+        text,
+      });
+    } else {
+      await client.chat.scheduleMessage({
+        channel: userId,
+        text,
+        post_at: Math.floor((Date.now() + offset * intervalMs) / 1_000),
+      });
+    }
+  }
+}
+
+async function onboardingStop(userId: string, client: App["client"]) {
+  const channel = (await client.conversations.open({ users: userId })).channel?.id;
+  if (!channel) {
+    throw new Error("Slack response is missing the onboarding DM channel ID");
+  }
+
+  const { scheduled_messages: scheduledMessages = [] } = await client.chat.scheduledMessages.list({
+    channel,
+    limit: onboarding.steps.length,
+  });
+
+  await Promise.all(
+    scheduledMessages.map(async ({ id }) => {
+      if (!id) {
+        throw new Error("Slack response is missing a scheduled onboarding message ID");
+      }
+
+      await client.chat.deleteScheduledMessage({
+        channel,
+        scheduled_message_id: id,
+      });
+    }),
+  );
 }
