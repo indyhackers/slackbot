@@ -26,16 +26,21 @@ export function createApp(options: AppOptions): App {
       return;
     }
 
-    const text = await openOnboarding(args)
-      .then((onboarding) => onboarding[action]())
-      .then((changed) => copy[action][changed ? "success" : "noop"])
+    const { channel, text } = await openOnboarding(args)
+      .then(async (onboarding) => ({
+        channel: onboarding.channel,
+        text: copy[action][(await onboarding[action]()) ? "success" : "noop"],
+      }))
       .catch((error) => {
         logger.error(`failed onboarding ${action}`, error);
-        return copy[action].failure;
+        return {
+          channel: undefined,
+          text: copy[action].failure,
+        };
       });
 
     await respond({
-      response_type: "ephemeral",
+      response_type: channel === command.channel_id ? "in_channel" : "ephemeral",
       text,
     });
   });
@@ -55,6 +60,8 @@ async function openOnboarding({ client, context }: AllMiddlewareArgs) {
   }
 
   return {
+    channel,
+
     async start() {
       const { scheduled_messages: scheduledMessages } = await client.chat.scheduledMessages.list({
         channel,
