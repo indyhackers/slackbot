@@ -1,5 +1,7 @@
-import { type AllMiddlewareArgs, App, type AppOptions } from "@slack/bolt";
+import { type AllMiddlewareArgs, App, type AppOptions, type webApi } from "@slack/bolt";
 import { onboarding } from "./onboarding.ts";
+
+type ScheduledMessages = NonNullable<webApi.ChatScheduledMessagesListResponse["scheduled_messages"]>;
 
 export function createApp(options: AppOptions): App {
   const app = new App(options);
@@ -9,7 +11,7 @@ export function createApp(options: AppOptions): App {
       return;
     }
 
-    await onboardingStart(args);
+    await onboardingAction("start", args);
   });
 
   app.command("/onboarding", async (args) => {
@@ -25,9 +27,8 @@ export function createApp(options: AppOptions): App {
       return;
     }
 
-    const run = action === "start" ? onboardingStart : onboardingStop;
     const { failure, noop, success } = onboarding[action];
-    const text = await run(args)
+    const text = await onboardingAction(action, args)
       .then((changed) => changed ? success : noop)
       .catch((error: unknown) => {
         logger.error(`failed to ${action} onboarding`, error);
@@ -43,18 +44,40 @@ export function createApp(options: AppOptions): App {
   return app;
 }
 
-async function onboardingStart(args: AllMiddlewareArgs) {
-  const { client } = args;
-  const channel = await openOnboardingChannel(args);
+async function onboardingAction(action: "start" | "stop", args: AllMiddlewareArgs) {
+  const { client, context } = args;
+  if (!context.userId) {
+    throw new Error("Slack context is missing the onboarding user ID");
+  }
+
+  const channel = (await client.conversations.open({ users: context.userId })).channel?.id;
+  if (!channel) {
+    throw new Error("Slack response is missing the onboarding DM channel ID");
+  }
 
   const { scheduled_messages: scheduledMessages = [] } = await client.chat.scheduledMessages.list({
     channel,
-    limit: 1,
+    limit: action === "start" ? 1 : onboarding.steps.length,
   });
-  if (scheduledMessages.length > 0) {
-    return false;
+
+  if (action === "start") {
+    if (scheduledMessages.length > 0) {
+      return false;
+    }
+
+    await onboardingStart(args, channel);
+  } else {
+    if (scheduledMessages.length === 0) {
+      return false;
+    }
+
+    await onboardingStop(args, channel, scheduledMessages);
   }
 
+  return true;
+}
+
+async function onboardingStart({ client }: AllMiddlewareArgs, channel: string) {
   const intervalMs = Number(process.env.ONBOARDING_INTERVAL_MS ?? 86_400_000);
 
   for (const { offset, text } of onboarding.steps) {
@@ -71,22 +94,13 @@ async function onboardingStart(args: AllMiddlewareArgs) {
       });
     }
   }
-
-  return true;
 }
 
-async function onboardingStop(args: AllMiddlewareArgs) {
-  const { client } = args;
-  const channel = await openOnboardingChannel(args);
-
-  const { scheduled_messages: scheduledMessages = [] } = await client.chat.scheduledMessages.list({
-    channel,
-    limit: onboarding.steps.length,
-  });
-  if (scheduledMessages.length === 0) {
-    return false;
-  }
-
+async function onboardingStop(
+  { client }: AllMiddlewareArgs,
+  channel: string,
+  scheduledMessages: ScheduledMessages,
+) {
   await Promise.all(
     scheduledMessages.map(async ({ id }) => {
       if (!id) {
@@ -99,19 +113,4 @@ async function onboardingStop(args: AllMiddlewareArgs) {
       });
     }),
   );
-
-  return true;
-}
-
-async function openOnboardingChannel({ client, context }: AllMiddlewareArgs) {
-  if (!context.userId) {
-    throw new Error("Slack context is missing the onboarding user ID");
-  }
-
-  const channel = (await client.conversations.open({ users: context.userId })).channel?.id;
-  if (!channel) {
-    throw new Error("Slack response is missing the onboarding DM channel ID");
-  }
-
-  return channel;
 }
