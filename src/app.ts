@@ -49,8 +49,7 @@ export function createApp(options: AppOptions): App {
 }
 
 async function onboardingStart({ client, context }: AllMiddlewareArgs) {
-  const userId = context.userId;
-  if (!userId) {
+  if (!context.userId) {
     throw new Error("Slack context is missing the onboarding user ID");
   }
 
@@ -59,12 +58,12 @@ async function onboardingStart({ client, context }: AllMiddlewareArgs) {
   for (const { offset, text } of onboarding.steps) {
     if (offset === 0) {
       await client.chat.postMessage({
-        channel: userId,
+        channel: context.userId,
         text,
       });
     } else {
       await client.chat.scheduleMessage({
-        channel: userId,
+        channel: context.userId,
         text,
         post_at: Math.floor((Date.now() + offset * intervalMs) / 1_000),
       });
@@ -73,12 +72,11 @@ async function onboardingStart({ client, context }: AllMiddlewareArgs) {
 }
 
 async function onboardingStop({ client, context }: AllMiddlewareArgs) {
-  const userId = context.userId;
-  if (!userId) {
+  if (!context.userId) {
     throw new Error("Slack context is missing the onboarding user ID");
   }
 
-  const channel = (await client.conversations.open({ users: userId })).channel?.id;
+  const channel = (await client.conversations.open({ users: context.userId })).channel?.id;
   if (!channel) {
     throw new Error("Slack response is missing the onboarding DM channel ID");
   }
