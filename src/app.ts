@@ -30,7 +30,7 @@ export function createApp(options: AppOptions): App {
       .then((onboarding) => onboarding[action]())
       .then((changed) => copy[action][changed ? "success" : "noop"])
       .catch((error) => {
-        logger.error(`failed to ${action} onboarding`, error);
+        logger.error(`failed onboarding ${action}`, error);
         return copy[action].failure;
       });
 
@@ -48,23 +48,19 @@ async function openOnboarding({ client, context }: AllMiddlewareArgs) {
     throw new Error("Slack context is missing the onboarding user ID");
   }
 
-  const channel = (await client.conversations.open({ users: context.userId })).channel?.id;
+  const conversation = await client.conversations.open({ users: context.userId });
+  const channel = conversation.channel?.id;
   if (!channel) {
     throw new Error("Slack response is missing the onboarding DM channel ID");
   }
 
-  const listScheduledMessages = async (limit: number) => {
-    const { scheduled_messages: messages = [] } = await client.chat.scheduledMessages.list({
-      channel,
-      limit,
-    });
-
-    return messages;
-  };
-
   return {
     async start() {
-      if ((await listScheduledMessages(1)).length > 0) {
+      const { scheduled_messages: scheduledMessages } = await client.chat.scheduledMessages.list({
+        channel,
+        limit: 1,
+      });
+      if (scheduledMessages?.length) {
         return false;
       }
 
@@ -89,13 +85,16 @@ async function openOnboarding({ client, context }: AllMiddlewareArgs) {
     },
 
     async stop() {
-      const messages = await listScheduledMessages(steps.length);
-      if (messages.length === 0) {
+      const { scheduled_messages: scheduledMessages } = await client.chat.scheduledMessages.list({
+        channel,
+        limit: steps.length,
+      });
+      if (!scheduledMessages?.length) {
         return false;
       }
 
       await Promise.all(
-        messages.map(async ({ id }) => {
+        scheduledMessages.map(async ({ id }) => {
           if (!id) {
             throw new Error("Slack response is missing a scheduled onboarding message ID");
           }
