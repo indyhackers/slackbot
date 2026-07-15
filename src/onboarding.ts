@@ -20,17 +20,15 @@ export const onboarding = {
     { offset: 5, text: events.trim() },
     { offset: 7, text: communityGoals.trim() },
   ],
-  copy: {
-    usage: usage.trim(),
-    start: {
-      noop: startActive.trim(),
-      success: startSuccess.trim(),
-      failure: startFailure.trim(),
-    },
-    stop: {
-      noop: stopEmpty.trim(),
-      success: stopSuccess.trim(),
-      failure: stopFailure.trim(),
-    },
+  usage: usage.trim(),
+  start: {
+    noop: startActive.trim(),
+    success: startSuccess.trim(),
+    failure: startFailure.trim(),
+  },
+  stop: {
+    noop: stopEmpty.trim(),
+    success: stopSuccess.trim(),
+    failure: stopFailure.trim(),
   },
 } as const;

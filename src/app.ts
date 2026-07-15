@@ -21,7 +21,7 @@ export function createApp(options: AppOptions): App {
     if (action !== "start" && action !== "stop") {
       await respond({
         response_type: "ephemeral",
-        text: onboarding.copy.usage,
+        text: onboarding.usage,
       });
       return;
     }
@@ -32,10 +32,10 @@ export function createApp(options: AppOptions): App {
         responseType = conversation.channel === command.channel_id ? "in_channel" : "ephemeral";
         return conversation.onboarding(action);
       })
-      .then((changed) => onboarding.copy[action][changed ? "success" : "noop"])
+      .then((changed) => onboarding[action][changed ? "success" : "noop"])
       .catch((error) => {
         logger.error(`failed onboarding ${action}`, error);
-        return onboarding.copy[action].failure;
+        return onboarding[action].failure;
       });
 
     await respond({
