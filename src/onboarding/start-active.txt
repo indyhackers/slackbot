@@ -1,0 +1,1 @@
+your Indy Hackers onboarding is already in progress. run `/onboarding stop` first if you'd like to restart.

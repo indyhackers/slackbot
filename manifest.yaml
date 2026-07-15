@@ -8,9 +8,9 @@ features:
     always_online: false
   slash_commands:
     - command: /onboarding
-      description: stop your Indy Hackers onboarding
+      description: start or stop your Indy Hackers onboarding
       should_escape: false
-      usage_hint: stop
+      usage_hint: start | stop
 oauth_config:
   scopes:
     bot:
