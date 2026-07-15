@@ -1,5 +1,5 @@
 import { type AllMiddlewareArgs, App, type AppOptions } from "@slack/bolt";
-import { copy, steps } from "./onboarding.ts";
+import { onboarding } from "./onboarding.ts";
 
 export function createApp(options: AppOptions): App {
   const app = new App(options);
@@ -21,7 +21,7 @@ export function createApp(options: AppOptions): App {
     if (action !== "start" && action !== "stop") {
       await respond({
         response_type: "ephemeral",
-        text: copy.usage,
+        text: onboarding.copy.usage,
       });
       return;
     }
@@ -32,10 +32,10 @@ export function createApp(options: AppOptions): App {
         responseType = conversation.channel === command.channel_id ? "in_channel" : "ephemeral";
         return conversation.onboarding(action);
       })
-      .then((changed) => copy[action][changed ? "success" : "noop"])
+      .then((changed) => onboarding.copy[action][changed ? "success" : "noop"])
       .catch((error) => {
         logger.error(`failed onboarding ${action}`, error);
-        return copy[action].failure;
+        return onboarding.copy[action].failure;
       });
 
     await respond({
@@ -69,7 +69,7 @@ async function openConversation({ client, context }: AllMiddlewareArgs) {
 
     const intervalMs = Number(process.env.ONBOARDING_INTERVAL_MS ?? 86_400_000);
 
-    for (const { offset, text } of steps) {
+    for (const { offset, text } of onboarding.steps) {
       if (offset === 0) {
         await client.chat.postMessage({
           channel,
@@ -90,7 +90,7 @@ async function openConversation({ client, context }: AllMiddlewareArgs) {
   const onboardingStop = async () => {
     const { scheduled_messages: scheduledMessages } = await client.chat.scheduledMessages.list({
       channel,
-      limit: steps.length,
+      limit: onboarding.steps.length,
     });
     if (!scheduledMessages?.length) {
       return false;
@@ -112,9 +112,8 @@ async function openConversation({ client, context }: AllMiddlewareArgs) {
     return true;
   };
 
-  const onboarding = (action: "start" | "stop") => {
-    return action === "start" ? onboardingStart() : onboardingStop();
+  return {
+    channel,
+    onboarding: (action: "start" | "stop") => action === "start" ? onboardingStart() : onboardingStop(),
   };
-
-  return { channel, onboarding };
 }
