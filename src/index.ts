@@ -7,7 +7,7 @@ const app = createApp({
 });
 
 await app.start();
-console.log("Indy Hackers Slack bot connected");
+app.logger.info("Indy Hackers Slack bot connected");
 
 let stopping = false;
 
