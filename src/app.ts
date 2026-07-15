@@ -74,11 +74,13 @@ async function openConversation({ client, context }: AllMiddlewareArgs) {
       if (offset === 0) {
         await client.chat.postMessage({
           channel,
+          link_names: true,
           text,
         });
       } else {
         await client.chat.scheduleMessage({
           channel,
+          link_names: true,
           text,
           post_at: Math.floor((Date.now() + offset * intervalMs) / 1_000),
         });
