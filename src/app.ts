@@ -18,8 +18,10 @@ export function createApp(options: AppOptions): App {
 
     switch (command.text.trim()) {
       case "stop": {
+        let hadScheduledMessages: boolean;
+
         try {
-          await onboardingStop(args);
+          hadScheduledMessages = await onboardingStop(args);
         } catch (error) {
           logger.error("failed to stop onboarding", error);
 
@@ -32,7 +34,7 @@ export function createApp(options: AppOptions): App {
 
         await respond({
           response_type: "ephemeral",
-          text: onboarding.stop.success,
+          text: hadScheduledMessages ? onboarding.stop.success : onboarding.stop.empty,
         });
         return;
       }
@@ -85,6 +87,9 @@ async function onboardingStop({ client, context }: AllMiddlewareArgs) {
     channel,
     limit: onboarding.steps.length,
   });
+  if (scheduledMessages.length === 0) {
+    return false;
+  }
 
   await Promise.all(
     scheduledMessages.map(async ({ id }) => {
@@ -98,4 +103,6 @@ async function onboardingStop({ client, context }: AllMiddlewareArgs) {
       });
     }),
   );
+
+  return true;
 }
