@@ -12,14 +12,15 @@ import stopFailure from "./onboarding/responses/stop-failure.txt";
 import stopSuccess from "./onboarding/responses/stop-success.txt";
 import usage from "./onboarding/responses/usage.txt";
 
-export const onboarding = {
-  steps: [
-    { offset: 0, text: welcome.trim() },
-    { offset: 1, text: introductions.trim() },
-    { offset: 3, text: channels.trim() },
-    { offset: 5, text: events.trim() },
-    { offset: 7, text: communityGoals.trim() },
-  ],
+export const steps = [
+  { offset: 0, text: welcome.trim() },
+  { offset: 1, text: introductions.trim() },
+  { offset: 3, text: channels.trim() },
+  { offset: 5, text: events.trim() },
+  { offset: 7, text: communityGoals.trim() },
+] as const;
+
+export const copy = {
   usage: usage.trim(),
   start: {
     noop: startActive.trim(),
