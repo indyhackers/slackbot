@@ -1,15 +1,16 @@
-import channels from "./onboarding/channels.txt";
-import communityGoals from "./onboarding/community-goals.txt";
-import events from "./onboarding/events.txt";
-import introductions from "./onboarding/introductions.txt";
-import startActive from "./onboarding/start-active.txt";
-import startFailure from "./onboarding/start-failure.txt";
-import startSuccess from "./onboarding/start-success.txt";
-import stopEmpty from "./onboarding/stop-empty.txt";
-import stopFailure from "./onboarding/stop-failure.txt";
-import stopSuccess from "./onboarding/stop-success.txt";
-import usage from "./onboarding/usage.txt";
-import welcome from "./onboarding/welcome.txt";
+import channels from "./onboarding/steps/channels.txt";
+import communityGoals from "./onboarding/steps/community-goals.txt";
+import events from "./onboarding/steps/events.txt";
+import introductions from "./onboarding/steps/introductions.txt";
+import welcome from "./onboarding/steps/welcome.txt";
+
+import startActive from "./onboarding/responses/start-active.txt";
+import startFailure from "./onboarding/responses/start-failure.txt";
+import startSuccess from "./onboarding/responses/start-success.txt";
+import stopEmpty from "./onboarding/responses/stop-empty.txt";
+import stopFailure from "./onboarding/responses/stop-failure.txt";
+import stopSuccess from "./onboarding/responses/stop-success.txt";
+import usage from "./onboarding/responses/usage.txt";
 
 export const onboarding = {
   steps: [

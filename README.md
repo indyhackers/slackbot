@@ -35,7 +35,7 @@ currently, every message this app schedules in a user DM is treated as an onboar
 
 ## contributing
 
-use sentence case for all copy in `src/onboarding/*.txt`.
+use sentence case for all `.txt` copy under `src/onboarding/`.
 
 ## container
 
