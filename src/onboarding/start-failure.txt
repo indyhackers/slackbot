@@ -1,1 +1,1 @@
-we couldn't schedule your complete onboarding. some messages may still arrive. run `/onboarding stop` before trying again.
+We couldn't schedule your complete onboarding. Some messages may still arrive. Run `/onboarding stop` before trying again.

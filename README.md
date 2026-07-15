@@ -33,6 +33,10 @@ the process logs `Indy Hackers Slack bot connected` after opening its Socket Mod
 
 currently, every message this app schedules in a user DM is treated as an onboarding message. `/onboarding start` won't create an overlapping run when the caller's app DM already has pending messages scheduled by the app, and `/onboarding stop` deletes all of them. don't use the same Slack bot token to schedule other user DM messages until they can be distinguished.
 
+## contributing
+
+use sentence case for all copy in `src/onboarding/*.txt`.
+
 ## container
 
 build the production image:
