@@ -1,16 +1,15 @@
-import { type AllMiddlewareArgs, App, type AppOptions } from "@slack/bolt";
+import { App } from "@slack/bolt";
+import type { AllMiddlewareArgs, AppOptions, RespondArguments } from "@slack/bolt";
 import { onboarding } from "./onboarding.ts";
 
 export function createApp(options: AppOptions): App {
   const app = new App(options);
 
   app.event("team_join", async (args) => {
-    if (args.event.user.is_bot) {
-      return;
+    if (!args.event.user.is_bot) {
+      const conversation = await openConversation(args);
+      await conversation.onboarding("start");
     }
-
-    const conversation = await openConversation(args);
-    await conversation.onboarding("start");
   });
 
   app.command("/onboarding", async (args) => {
@@ -18,30 +17,32 @@ export function createApp(options: AppOptions): App {
     await ack();
 
     const action = command.text.trim();
-    if (action !== "start" && action !== "stop") {
-      await respond({
-        response_type: "ephemeral",
-        text: onboarding.usage,
-      });
-      return;
+    switch (action) {
+      case "start":
+      case "stop": {
+        let responseType: RespondArguments["response_type"] = "ephemeral";
+        let text = onboarding[action].failure;
+        try {
+          const conversation = await openConversation(args);
+          responseType = conversation.matches(command.channel_id) ? "in_channel" : "ephemeral";
+          const changed = await conversation.onboarding(action);
+          text = onboarding[action][changed ? "success" : "noop"];
+        } catch (error) {
+          logger.error(`failed onboarding ${action}`, error);
+        }
+
+        return respond({
+          response_type: responseType,
+          text,
+        });
+      }
+
+      default:
+        return respond({
+          response_type: "ephemeral",
+          text: onboarding.usage,
+        });
     }
-
-    let responseType: "in_channel" | "ephemeral" = "ephemeral";
-    const text = await openConversation(args)
-      .then((conversation) => {
-        responseType = conversation.channel === command.channel_id ? "in_channel" : "ephemeral";
-        return conversation.onboarding(action);
-      })
-      .then((changed) => onboarding[action][changed ? "success" : "noop"])
-      .catch((error) => {
-        logger.error(`failed onboarding ${action}`, error);
-        return onboarding[action].failure;
-      });
-
-    await respond({
-      response_type: responseType,
-      text,
-    });
   });
 
   return app;
@@ -113,7 +114,7 @@ async function openConversation({ client, context }: AllMiddlewareArgs) {
   };
 
   return {
-    channel,
+    matches: (channelId: string) => channel === channelId,
     onboarding: (action: "start" | "stop") => action === "start" ? onboardingStart() : onboardingStop(),
   };
 }
