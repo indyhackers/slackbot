@@ -52,7 +52,8 @@ async function openConversation({ client, context }: AllMiddlewareArgs) {
     throw new Error("Slack context is missing the onboarding user ID");
   }
 
-  const channel = (await client.conversations.open({ users: context.userId })).channel?.id;
+  const conversation = await client.conversations.open({ users: context.userId });
+  const channel = conversation.channel?.id;
   if (!channel) {
     throw new Error("Slack response is missing the onboarding DM channel ID");
   }
