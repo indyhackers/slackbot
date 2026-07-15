@@ -17,12 +17,12 @@ async function stop(signal: NodeJS.Signals): Promise<void> {
   }
 
   stopping = true;
-  console.log(`received ${signal}; stopping Indy Hackers Slack bot`);
+  app.logger.info(`received ${signal}; stopping Indy Hackers Slack bot`);
 
   try {
     await app.stop();
   } catch (error) {
-    console.error("failed to stop Indy Hackers Slack bot", error);
+    app.logger.error("failed to stop Indy Hackers Slack bot", error);
     process.exitCode = 1;
   }
 }
