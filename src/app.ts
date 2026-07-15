@@ -52,13 +52,12 @@ async function openConversation({ client, context }: AllMiddlewareArgs) {
     throw new Error("Slack context is missing the onboarding user ID");
   }
 
-  const conversation = await client.conversations.open({ users: context.userId });
-  if (!conversation.channel?.id) {
+  const channel = (await client.conversations.open({ users: context.userId })).channel?.id;
+  if (!channel) {
     throw new Error("Slack response is missing the onboarding DM channel ID");
   }
-  const { id: channel } = conversation.channel;
 
-  async function onboardingStart() {
+  const onboardingStart = async () => {
     const { scheduled_messages: scheduledMessages } = await client.chat.scheduledMessages.list({
       channel,
       limit: 1,
@@ -85,9 +84,9 @@ async function openConversation({ client, context }: AllMiddlewareArgs) {
     }
 
     return true;
-  }
+  };
 
-  async function onboardingStop() {
+  const onboardingStop = async () => {
     const { scheduled_messages: scheduledMessages } = await client.chat.scheduledMessages.list({
       channel,
       limit: steps.length,
@@ -110,11 +109,11 @@ async function openConversation({ client, context }: AllMiddlewareArgs) {
     );
 
     return true;
-  }
+  };
 
-  function onboarding(action: "start" | "stop") {
+  const onboarding = (action: "start" | "stop") => {
     return action === "start" ? onboardingStart() : onboardingStop();
-  }
+  };
 
   return { channel, onboarding };
 }
