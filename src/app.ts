@@ -26,21 +26,20 @@ export function createApp(options: AppOptions): App {
       return;
     }
 
-    const { channel, text } = await openOnboarding(args)
-      .then(async (onboarding) => ({
-        channel: onboarding.channel,
-        text: copy[action][(await onboarding[action]()) ? "success" : "noop"],
-      }))
+    let responseType: "in_channel" | "ephemeral" = "ephemeral";
+    const text = await openOnboarding(args)
+      .then((onboarding) => {
+        responseType = onboarding.channel === command.channel_id ? "in_channel" : "ephemeral";
+        return onboarding[action]();
+      })
+      .then((changed) => copy[action][changed ? "success" : "noop"])
       .catch((error) => {
         logger.error(`failed onboarding ${action}`, error);
-        return {
-          channel: undefined,
-          text: copy[action].failure,
-        };
+        return copy[action].failure;
       });
 
     await respond({
-      response_type: channel === command.channel_id ? "in_channel" : "ephemeral",
+      response_type: responseType,
       text,
     });
   });
