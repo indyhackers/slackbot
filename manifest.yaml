@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/slackapi/manifest-schema/main/manifest.schema.json
+
 display_information:
   name: Indy Hackers
   description: Community automation for the Indy Hackers Slack workspace
