@@ -26,12 +26,12 @@ export function createApp(options: AppOptions): App {
     }
 
     const run = action === "start" ? onboardingStart : onboardingStop;
-    const unchanged = action === "start" ? onboarding.start.active : onboarding.stop.empty;
+    const { failure, noop, success } = onboarding[action];
     const text = await run(args)
-      .then((changed) => changed ? onboarding[action].success : unchanged)
+      .then((changed) => changed ? success : noop)
       .catch((error: unknown) => {
         logger.error(`failed to ${action} onboarding`, error);
-        return onboarding[action].failure;
+        return failure;
       });
 
     await respond({

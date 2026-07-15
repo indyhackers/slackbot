@@ -22,12 +22,12 @@ export const onboarding = {
   ],
   usage: usage.trim(),
   start: {
-    active: startActive.trim(),
+    noop: startActive.trim(),
     success: startSuccess.trim(),
     failure: startFailure.trim(),
   },
   stop: {
-    empty: stopEmpty.trim(),
+    noop: stopEmpty.trim(),
     success: stopSuccess.trim(),
     failure: stopFailure.trim(),
   },
