@@ -26,6 +26,9 @@ export function createApp(options: AppOptions): App {
           const conversation = await openConversation(args);
           responseType = conversation.matches(command.channel_id) ? "in_channel" : "ephemeral";
           const changed = await conversation.onboarding(action);
+          if (action === "start" && changed && responseType === "in_channel") {
+            return;
+          }
           text = onboarding[action][changed ? "success" : "noop"];
         } catch (error) {
           logger.error(`failed onboarding ${action}`, error);
