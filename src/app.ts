@@ -34,17 +34,19 @@ export function createApp(options: AppOptions): App {
           logger.error(`failed onboarding ${action}`, error);
         }
 
-        return respond({
+        await respond({
           response_type: responseType,
           text,
         });
+        return;
       }
 
       default:
-        return respond({
+        await respond({
           response_type: "ephemeral",
           text: onboarding.usage,
         });
+        return;
     }
   });
 
