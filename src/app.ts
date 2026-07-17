@@ -1,6 +1,6 @@
 import { App } from "@slack/bolt";
 import type { AllMiddlewareArgs, AppOptions, RespondArguments } from "@slack/bolt";
-import messages from "./messages.toml";
+import messages from "./messages.yaml";
 
 export function createApp(options: AppOptions): App {
   const app = new App(options);

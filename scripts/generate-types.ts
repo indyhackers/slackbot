@@ -1,4 +1,4 @@
-import messages from "../src/messages.toml";
+import messages from "../src/messages.yaml";
 
 function typeOf(value: unknown, indent = ""): string {
   if (Array.isArray(value)) return `${typeOf(value[0], indent)}[]`;
@@ -13,6 +13,6 @@ function typeOf(value: unknown, indent = ""): string {
 }
 
 await Bun.write(
-  "src/messages.toml.d.ts",
+  "src/messages.yaml.d.ts",
   `declare const messages: ${typeOf(messages)};\n\nexport default messages;\n`,
 );
