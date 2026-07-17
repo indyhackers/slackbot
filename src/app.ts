@@ -1,6 +1,6 @@
 import { App } from "@slack/bolt";
 import type { AllMiddlewareArgs, AppOptions, RespondArguments } from "@slack/bolt";
-import { onboarding } from "./onboarding.ts";
+import messages from "./messages.toml";
 
 export function createApp(options: AppOptions): App {
   const app = new App(options);
@@ -21,7 +21,7 @@ export function createApp(options: AppOptions): App {
       case "start":
       case "stop": {
         let responseType: RespondArguments["response_type"] = "ephemeral";
-        let text = onboarding[action].failure;
+        let text = messages.onboarding[action].failure;
         try {
           const conversation = await openConversation(args);
           responseType = conversation.matches(command.channel_id) ? "in_channel" : "ephemeral";
@@ -29,7 +29,7 @@ export function createApp(options: AppOptions): App {
           if (action === "start" && changed && responseType === "in_channel") {
             return;
           }
-          text = onboarding[action][changed ? "success" : "noop"];
+          text = messages.onboarding[action][changed ? "success" : "noop"];
         } catch (error) {
           logger.error(`failed onboarding ${action}`, error);
         }
@@ -44,7 +44,7 @@ export function createApp(options: AppOptions): App {
       default:
         await respond({
           response_type: "ephemeral",
-          text: onboarding.usage,
+          text: messages.onboarding.usage,
         });
         return;
     }
@@ -75,7 +75,7 @@ async function openConversation({ client, context }: AllMiddlewareArgs) {
 
     const intervalMs = Number(process.env.ONBOARDING_INTERVAL_MS ?? 86_400_000);
 
-    for (const { offset, text } of onboarding.steps) {
+    for (const { offset, text } of messages.onboarding.steps) {
       if (offset === 0) {
         await client.chat.postMessage({
           channel,
@@ -98,7 +98,7 @@ async function openConversation({ client, context }: AllMiddlewareArgs) {
   const onboardingStop = async () => {
     const { scheduled_messages: scheduledMessages } = await client.chat.scheduledMessages.list({
       channel,
-      limit: onboarding.steps.length,
+      limit: messages.onboarding.steps.length,
     });
     if (!scheduledMessages?.length) {
       return false;

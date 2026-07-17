@@ -1,5 +1,0 @@
-Welcome to Indy Hackers! We're an Indiana tech community where people meet, learn, and build together.
-
-Please read our <https://www.indyhackers.org/code-of-conduct|Code of Conduct>. Be constructive, respect each channel's topic, and avoid unsolicited DMs or promotion. If something feels wrong, privately email help@indyhackers.org or contact an Indy Hackers board member.
-
-We'll send a few tips this week. Run `/onboarding stop` at any time to stop onboarding.

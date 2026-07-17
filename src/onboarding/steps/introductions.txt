@@ -1,7 +1,0 @@
-Ready to say hello? Introduce yourself in #intros.
-
-Here's an easy template:
-- Name and pronouns
-- What you build or want to learn
-- Where you are in Indiana
-- What you'd like help with

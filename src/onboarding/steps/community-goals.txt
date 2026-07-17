@@ -1,9 +1,0 @@
-One last check-in: what do you want from the community?
-
-- Meet people → #intros
-- Learn → #career-advice
-- Build projects → #side-projects
-- Career help → #jobs
-- All set → no action needed
-
-That's the end of onboarding. We're glad you're here!

@@ -1,1 +1,0 @@
-We couldn't schedule your complete onboarding. Some messages may still arrive. Run `/onboarding stop` before trying again.

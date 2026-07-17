@@ -1,1 +1,0 @@
-Run `/onboarding start` to start your onboarding or `/onboarding stop` to stop it.
