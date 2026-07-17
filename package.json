@@ -18,7 +18,7 @@
     "dev": "bun --watch src/index.ts",
     "format": "dprint fmt",
     "check-format": "dprint check",
-    "check-types": "tsc --noEmit",
+    "check-types": "bun --bun tsc --noEmit",
     "test": "bun test --pass-with-no-tests"
   },
   "dependencies": {
