@@ -1,16 +1,16 @@
-import { type App, type RespondArguments, type webApi } from "@slack/bolt";
+import { type App, type RespondArguments } from "@slack/bolt";
 import { prose } from "./prose.ts";
 
-type OnboardingAction = "start" | "stop";
-
 export function registerOnboarding(app: App, intervalMs: number) {
-  app.event("team_join", async ({ client, event }) => {
+  const client = app.client;
+
+  app.event("team_join", async ({ event }) => {
     if (!event.user.is_bot) {
-      await runOnboarding(client, event.user.id, "start", intervalMs);
+      await start(event.user.id);
     }
   });
 
-  app.command("/onboarding", async ({ ack, client, command, logger, respond }) => {
+  app.command("/onboarding", async ({ ack, command, logger, respond }) => {
     await ack();
 
     const action = command.text.trim();
@@ -26,7 +26,7 @@ export function registerOnboarding(app: App, intervalMs: number) {
     let text = prose.onboarding[action].failure;
 
     try {
-      const result = await runOnboarding(client, command.user_id, action, intervalMs);
+      const result = action === "start" ? await start(command.user_id) : await stop(command.user_id);
       responseType = result.channel === command.channel_id ? "in_channel" : "ephemeral";
 
       if (action === "start" && result.changed && responseType === "in_channel") {
@@ -43,85 +43,73 @@ export function registerOnboarding(app: App, intervalMs: number) {
       text,
     });
   });
-}
 
-async function runOnboarding(
-  client: webApi.WebClient,
-  userId: string,
-  action: OnboardingAction,
-  intervalMs: number,
-) {
-  const channel = await openConversation(client, userId);
-  const changed = action === "start"
-    ? await startOnboarding(client, channel, intervalMs)
-    : await stopOnboarding(client, channel);
+  async function openConversation(userId: string) {
+    const conversation = await client.conversations.open({ users: userId });
+    const channel = conversation.channel?.id;
 
-  return { channel, changed };
-}
-
-async function openConversation(client: webApi.WebClient, userId: string) {
-  const conversation = await client.conversations.open({ users: userId });
-  const channel = conversation.channel?.id;
-
-  if (!channel) {
-    throw new Error("Slack response is missing the onboarding DM channel ID");
-  }
-
-  return channel;
-}
-
-async function startOnboarding(client: webApi.WebClient, channel: string, intervalMs: number) {
-  const { scheduled_messages: scheduledMessages = [] } = await client.chat.scheduledMessages.list({
-    channel,
-    limit: 1,
-  });
-
-  if (scheduledMessages.length) {
-    return false;
-  }
-
-  for (const { offset, text } of prose.onboarding.steps) {
-    if (offset === 0) {
-      await client.chat.postMessage({
-        channel,
-        link_names: true,
-        text,
-      });
-    } else {
-      await client.chat.scheduleMessage({
-        channel,
-        link_names: true,
-        text,
-        post_at: Math.floor((Date.now() + offset * intervalMs) / 1_000),
-      });
+    if (!channel) {
+      throw new Error("Slack response is missing the onboarding DM channel ID");
     }
+
+    return channel;
   }
 
-  return true;
-}
+  async function start(userId: string) {
+    const channel = await openConversation(userId);
+    const { scheduled_messages: scheduledMessages = [] } = await client.chat.scheduledMessages.list({
+      channel,
+      limit: 1,
+    });
 
-async function stopOnboarding(client: webApi.WebClient, channel: string) {
-  const { scheduled_messages: scheduledMessages = [] } = await client.chat.scheduledMessages.list({
-    channel,
-    limit: prose.onboarding.steps.length,
-  });
+    if (scheduledMessages.length) {
+      return { channel, changed: false };
+    }
 
-  if (!scheduledMessages.length) {
-    return false;
-  }
-
-  await Promise.all(
-    scheduledMessages.map(({ id }) => {
-      if (!id) {
-        throw new Error("Slack response is missing a scheduled onboarding message ID");
+    for (const { offset, text } of prose.onboarding.steps) {
+      if (offset === 0) {
+        await client.chat.postMessage({
+          channel,
+          link_names: true,
+          text,
+        });
+      } else {
+        await client.chat.scheduleMessage({
+          channel,
+          link_names: true,
+          text,
+          post_at: Math.floor((Date.now() + offset * intervalMs) / 1_000),
+        });
       }
+    }
 
-      return client.chat.deleteScheduledMessage({
-        channel,
-        scheduled_message_id: id,
-      });
-    }),
-  );
+    return { channel, changed: true };
+  }
 
-  return true;
+  async function stop(userId: string) {
+    const channel = await openConversation(userId);
+    const { scheduled_messages: scheduledMessages = [] } = await client.chat.scheduledMessages.list({
+      channel,
+      limit: prose.onboarding.steps.length,
+    });
+
+    if (!scheduledMessages.length) {
+      return { channel, changed: false };
+    }
+
+    await Promise.all(
+      scheduledMessages.map(({ id }) => {
+        if (!id) {
+          throw new Error("Slack response is missing a scheduled onboarding message ID");
+        }
+
+        return client.chat.deleteScheduledMessage({
+          channel,
+          scheduled_message_id: id,
+        });
+      }),
+    );
+
+    return { channel, changed: true };
+  }
 }
