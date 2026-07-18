@@ -2,8 +2,6 @@ import { type App, type RespondArguments } from "@slack/bolt";
 import { prose } from "./prose.ts";
 
 export function registerOnboarding(app: App, intervalMs: number) {
-  const client = app.client;
-
   app.event("team_join", async ({ event }) => {
     if (!event.user.is_bot) {
       await start(event.user.id);
@@ -45,7 +43,7 @@ export function registerOnboarding(app: App, intervalMs: number) {
   });
 
   async function openConversation(userId: string) {
-    const conversation = await client.conversations.open({ users: userId });
+    const conversation = await app.client.conversations.open({ users: userId });
     const channel = conversation.channel?.id;
 
     if (!channel) {
@@ -57,7 +55,7 @@ export function registerOnboarding(app: App, intervalMs: number) {
 
   async function start(userId: string) {
     const channel = await openConversation(userId);
-    const { scheduled_messages: scheduledMessages = [] } = await client.chat.scheduledMessages.list({
+    const { scheduled_messages: scheduledMessages = [] } = await app.client.chat.scheduledMessages.list({
       channel,
       limit: 1,
     });
@@ -68,13 +66,13 @@ export function registerOnboarding(app: App, intervalMs: number) {
 
     for (const { offset, text } of prose.onboarding.steps) {
       if (offset === 0) {
-        await client.chat.postMessage({
+        await app.client.chat.postMessage({
           channel,
           link_names: true,
           text,
         });
       } else {
-        await client.chat.scheduleMessage({
+        await app.client.chat.scheduleMessage({
           channel,
           link_names: true,
           text,
@@ -88,7 +86,7 @@ export function registerOnboarding(app: App, intervalMs: number) {
 
   async function stop(userId: string) {
     const channel = await openConversation(userId);
-    const { scheduled_messages: scheduledMessages = [] } = await client.chat.scheduledMessages.list({
+    const { scheduled_messages: scheduledMessages = [] } = await app.client.chat.scheduledMessages.list({
       channel,
       limit: prose.onboarding.steps.length,
     });
@@ -103,7 +101,7 @@ export function registerOnboarding(app: App, intervalMs: number) {
           throw new Error("Slack response is missing a scheduled onboarding message ID");
         }
 
-        return client.chat.deleteScheduledMessage({
+        return app.client.chat.deleteScheduledMessage({
           channel,
           scheduled_message_id: id,
         });
