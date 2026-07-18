@@ -1,4 +1,4 @@
-import { type App, type RespondArguments } from "@slack/bolt";
+import type { App, RespondArguments } from "@slack/bolt";
 import { prose } from "./prose.ts";
 
 export function registerOnboarding(app: App, intervalMs: number) {
