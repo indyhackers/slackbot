@@ -46,16 +46,15 @@ export const prose = {
 
     start: {
       failure:
-        "We couldn't schedule your complete onboarding. Some messages may still arrive. Run `/onboarding stop` before trying again.",
-      noop:
-        "Your Indy Hackers onboarding is already in progress. Run `/onboarding stop` first if you'd like to restart.",
-      success: "Your Indy Hackers onboarding has started. Check your DMs for the first message.",
+        "We couldn't fully start onboarding. Some messages may still arrive. Run `/onboarding stop` before trying again.",
+      noop: "Onboarding is already in progress. Run `/onboarding stop` before starting again.",
+      success: "Onboarding started. Check your DMs for the first message.",
     },
 
     stop: {
-      failure: "We couldn't stop every scheduled onboarding message. Some may still arrive. Please try again.",
-      noop: "You don't have any scheduled onboarding messages to stop.",
-      success: "Your Indy Hackers onboarding has stopped. You're all set!",
+      failure: "We couldn't fully stop onboarding. Some messages may still arrive. Please try again.",
+      noop: "Onboarding is not in progress.",
+      success: "Onboarding stopped. You won't receive any more scheduled messages.",
     },
 
     steps: [
