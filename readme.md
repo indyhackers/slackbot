@@ -35,7 +35,7 @@ currently, every message this app schedules in a user DM is treated as an onboar
 
 ## contributing
 
-use sentence case for all onboarding copy in `src/messages.yaml`.
+use sentence case for all user-facing copy in `src/prose.ts`.
 
 ## container
 
