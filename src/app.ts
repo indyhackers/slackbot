@@ -1,13 +1,17 @@
-import { App } from "@slack/bolt";
-import type { AllMiddlewareArgs, AppOptions, RespondArguments } from "@slack/bolt";
+import { type AllMiddlewareArgs, App, type RespondArguments } from "@slack/bolt";
+import type { Config } from "./config.ts";
 import messages from "./messages.yaml";
 
-export function createApp(options: AppOptions): App {
-  const app = new App(options);
+export function createApp(config: Config): App {
+  const app = new App({
+    token: config.SLACK_BOT_TOKEN,
+    appToken: config.SLACK_APP_TOKEN,
+    socketMode: true,
+  });
 
   app.event("team_join", async (args) => {
     if (!args.event.user.is_bot) {
-      const conversation = await openConversation(args);
+      const conversation = await openConversation(config, args);
       await conversation.onboarding("start");
     }
   });
@@ -23,7 +27,7 @@ export function createApp(options: AppOptions): App {
         let responseType: RespondArguments["response_type"] = "ephemeral";
         let text = messages.onboarding[action].failure;
         try {
-          const conversation = await openConversation(args);
+          const conversation = await openConversation(config, args);
           responseType = conversation.matches(command.channel_id) ? "in_channel" : "ephemeral";
           const changed = await conversation.onboarding(action);
           if (action === "start" && changed && responseType === "in_channel") {
@@ -53,7 +57,7 @@ export function createApp(options: AppOptions): App {
   return app;
 }
 
-async function openConversation({ client, context }: AllMiddlewareArgs) {
+async function openConversation(config: Config, { client, context }: AllMiddlewareArgs) {
   if (!context.userId) {
     throw new Error("Slack context is missing the onboarding user ID");
   }
@@ -73,8 +77,6 @@ async function openConversation({ client, context }: AllMiddlewareArgs) {
       return false;
     }
 
-    const intervalMs = Number(process.env.ONBOARDING_INTERVAL_MS ?? 86_400_000);
-
     for (const { offset, text } of messages.onboarding.steps) {
       if (offset === 0) {
         await client.chat.postMessage({
@@ -87,7 +89,7 @@ async function openConversation({ client, context }: AllMiddlewareArgs) {
           channel,
           link_names: true,
           text,
-          post_at: Math.floor((Date.now() + offset * intervalMs) / 1_000),
+          post_at: Math.floor((Date.now() + offset * config.ONBOARDING_INTERVAL_MS) / 1_000),
         });
       }
     }
