@@ -1,7 +1,7 @@
 import { createApp } from "./app.ts";
-import { makeConfig } from "./config.ts";
+import { Config } from "./config.ts";
 
-const config = makeConfig();
+const config = Config.make();
 const app = createApp(config);
 
 await app.start();

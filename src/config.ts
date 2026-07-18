@@ -1,6 +1,4 @@
-export type Config = ReturnType<typeof makeConfig>;
-
-export const makeConfig = (env: Record<string, string | undefined> = process.env) => {
+const make = (env: Record<string, string | undefined> = process.env) => {
   const required = (name: string) => {
     const value = env[name]?.trim();
 
@@ -23,3 +21,6 @@ export const makeConfig = (env: Record<string, string | undefined> = process.env
     ONBOARDING_INTERVAL_MS,
   } as const;
 };
+
+export const Config = { make };
+export type Config = ReturnType<typeof make>;
