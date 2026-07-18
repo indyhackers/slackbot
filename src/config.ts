@@ -1,4 +1,4 @@
-const make = (env: Record<string, string | undefined> = process.env) => {
+export function makeConfig(env = process.env) {
   const required = (name: string) => {
     const value = env[name]?.trim();
 
@@ -20,7 +20,6 @@ const make = (env: Record<string, string | undefined> = process.env) => {
     SLACK_APP_TOKEN: required("SLACK_APP_TOKEN"),
     ONBOARDING_INTERVAL_MS,
   } as const;
-};
+}
 
-export const Config = { make };
-export type Config = ReturnType<typeof make>;
+export type Config = ReturnType<typeof makeConfig>;

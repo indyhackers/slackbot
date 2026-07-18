@@ -1,15 +1,22 @@
-import { createApp } from "./app.ts";
-import { Config } from "./config.ts";
+import { App } from "@slack/bolt";
+import { makeConfig } from "./config.ts";
+import { registerOnboarding } from "./onboarding.ts";
 
-const config = Config.make();
-const app = createApp(config);
+const config = makeConfig();
+const app = new App({
+  token: config.SLACK_BOT_TOKEN,
+  appToken: config.SLACK_APP_TOKEN,
+  socketMode: true,
+});
+
+registerOnboarding(app, config.ONBOARDING_INTERVAL_MS);
 
 await app.start();
 app.logger.info("Indy Hackers Slack bot connected");
 
 let stopping = false;
 
-async function stop(signal: NodeJS.Signals): Promise<void> {
+async function stop(signal: NodeJS.Signals) {
   if (stopping) {
     return;
   }
